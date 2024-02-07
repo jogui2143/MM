@@ -22,8 +22,7 @@ def colormap(img, cmap):
 def see_colormap(img, cm):
   fig = plt.figure()
   plt.imshow(img, cm)
-  #esta porra n ta funcionando caralho
-  #fig.colorbar(mcm.ScalarMappable(cmap=cm))
+  fig.colorbar(mcm.ScalarMappable(cmap=cm), ax=fig.gca())
   plt.axis('off')
   plt.show()
 
