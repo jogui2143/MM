@@ -7,7 +7,7 @@ import numpy as np
 def readImg(loc):
   return mpimg.imread(loc)
 
-nature = readImg('nature.bmp')
+#nature = readImg('nature.bmp')
 
 def grayscale(img):
   #esses coeficientes são uma convenção para converter para escala de cinza :)
@@ -96,12 +96,12 @@ def unpadding(img, og):
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ### Teste do padding e unpadding
-#padded_img, og = padding(nature)
+# padded_img, og = padding(nature)
 
-#unpadded_img = unpadding(padded_img, og)
+# unpadded_img = unpadding(padded_img, og)
 
-#print(f'Dimensão Original: {nature.shape[:2]}')
-#print(f'Dimensão Padded: {padded_img.shape[:2]}\nDimensão Unpadded: {unpadded_img.shape[:2]}')
+# print(f'Dimensão Original: {nature.shape[:2]}')
+# print(f'Dimensão Padded: {padded_img.shape[:2]}\nDimensão Unpadded: {unpadded_img.shape[:2]}')
 
 
 def RGB_to_YCbCr(img):
@@ -147,20 +147,28 @@ def YCbCr_to_RGB(img):
 #print(f'Pixel 0x0 dps: {nature[0, 0, :]}')
 #print(f'Pixel 0x0 equivalente: {nature[0, 0, :] == nature_RGB[0, 0, :]}')
 
-def encoder(img, isolate_rgb = False, padding = False, rgb_to_ycbcr = False):
+def encoder(img, isolate_rgb = False, pad = False, rgb_to_ycbcr = False):
   if isolate_rgb:
-    return isolate_rgb(img)
-  elif padding:
-    return padding(img)
+    return show_rgb_channels(img)
+  elif pad:
+    ((R,G,B)),(h,w) = padding(img)
+    return ((R,G,B),(h,w))
   elif rgb_to_ycbcr:
     return RGB_to_YCbCr(img)
 
-def decoder(img, unite_rgb = False, unpadding = False, ycbcr_to_rgb = False):
+def decoder(img, padded_img = None, og = None, unite_rgb = False, unpad = False, ycbcr_to_rgb = False):
   if unite_rgb:
     return unite_rgb(img)
-  elif unpadding:
-    return unpadding(img)
+  elif unpad:
+    return unpadding(padded_img, og)
   elif ycbcr_to_rgb:
     return YCbCr_to_RGB(img)
 
+def main():
+  nature = readImg('nature.bmp')
+  ((R,G,B)),(h,w) = encoder(nature, pad=True)
+  decoder(nature,padded_img = (R,G,B), og = (h,w),unpad=True)
+  return
 
+if __name__ == "__main__":
+  main()
