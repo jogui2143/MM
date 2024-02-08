@@ -4,35 +4,60 @@ import matplotlib.colors as clr
 import matplotlib.cm as mcm
 import numpy as np
 
+#funções elementares:
 
-def readImg(loc):
-  return mpimg.imread(loc)
-
-#nature = readImg('nature.bmp')
-
+# converter a imagem para RGB cinza
 def grayscale(img):
   #esses coeficientes são uma convenção para converter para escala de cinza :)
   #e isso é necessário pois permite que o colormap pinte a imagem com base na intensidade de cinza
   return np.dot(img, [0.2989, 0.5870, 0.1140])
 
-def colormap(img, cmap):
-  img = grayscale(img)
-  cm = clr.LinearSegmentedColormap.from_list('cmap', cmap, 256)
-  see_colormap(img, cm)
-
+# exibir uma imagem em tons de cinza com um colormap aplicado e fornecer uma barra de cores como uma referência visual 
+# para o mapeamento entre os valores de intensidade de cinza e as cores do colormap
 def see_colormap(img, cm):
+  #cria uma nova figura na qual a imagem será exibida.
   fig = plt.figure()
+  #Exibir a imagem com o colormap
   plt.imshow(img, cm)
+  #Adicionar uma barra de cores
   fig.colorbar(mcm.ScalarMappable(cmap=cm), ax=fig.gca())
+  #Esconder os eixos
   plt.axis('off')
+  #Mostrar a figura: exibir a figura inteira, que inclui a imagem com o colormap e a barra de cores correspondente, na tela
   plt.show()
 
+# aplicar um mapa de cores personalizado a uma imagem em escala de cinza e depois visualizá-la com esse mapa de cores
+def colormap(img, cmap):
+  img = grayscale(img)
+  #mapa de cores personalizado é criado a partir de uma lista de cores (cmap) fornecida pelo usuário.
+  cm = clr.LinearSegmentedColormap.from_list('cmap', cmap, 256)
+  #exibir a imagem em escala de cinza com o colormap aplicado
+  see_colormap(img, cm)
+
+#3.1. Leia uma imagem .bmp
+def readImg(loc):
+  return mpimg.imread(loc)
+
+#3.2. Crie uma função para implementar um colormap definido pelo utilizador
 def user_colormap(img):
- colors = input('Insert colors: ').split(' ')
- colors += ['black'] if len(colors) < 2 else colors
+ #arrumar 
  colormap(img, colors)
 
-#user_colormap(nature)
+#3.4. Encoder: Crie uma função para separar a imagem nos seus componentes RGB. 
+def encoder(img, isolate_rgb = False):
+  if isolate_rgb:
+    return isolate_rgb(img)
+  
+#3.5. Decoder: Crie também a função inversa (que combine os 3 componentes RGB).
+def decoder(img, unite_rgb = False):
+  if unite_rgb:
+    return unite_rgb(img)
+  
+#3.3. Crie uma função que permita visualizar a imagem com um dado colormap.
+nature = readImg('nature.bmp')
+user_colormap(nature)
+
+
 
 def isolate_rgb(img):
   return img[:,:,0], img[:,:,1], img[:,:,2]
