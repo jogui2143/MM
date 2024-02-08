@@ -157,6 +157,49 @@ def unpad_image(padded_image,original_dim):
 
 
 
+def padding(img):
+  # Captura a altura (h) e a largura (ln) da imagem.
+  h,w = img.shape[:2]
+  p1, p2, p3 = isolate_rgb(img)
+  # Obtém as dimensões do primeiro canal de cor.
+  r,c = p1.shape
+  # Calcula quantos pixels faltam para a altura e a largura para serem múltiplos de 32.
+  # Se a dimensão já for múltiplo de 32, não adiciona nenhum pixel (0).
+  v_pad = 32 - (r % 32) if r % 32 > 0 else 0
+  h_pad = 32 - (c % 32) if c % 32 > 0 else 0  
+
+  # Adiciona pixels à última linha (replica a última linha) e à última coluna (replica a última coluna)
+  # para fazer com que as dimensões sejam múltiplas de 32.
+  # Faz isso para os três canais RGB separadamente.
+  p1 = np.vstack([p1, np.repeat(np.array(p1[-1,:], ndmin = 2), v_pad, axis=0)])
+  p1 = np.hstack([p1, np.repeat(np.array(p1[:,-1], ndmin = 2), h_pad, axis=0).T])
+
+  p2 = np.vstack([p2, np.repeat(np.array(p2[-1,:], ndmin = 2), v_pad, axis=0)])
+  p2 = np.hstack([p2, np.repeat(np.array(p2[:,-1], ndmin = 2), h_pad, axis=0).T])
+
+  p3 = np.vstack([p3, np.repeat(np.array(p3[-1,:], ndmin = 2), v_pad, axis=0)])
+  p3 = np.hstack([p3, np.repeat(np.array(p3[:,-1], ndmin = 2), h_pad, axis=0).T])
+
+  # Empilha os três canais de volta em uma imagem e retorna junto com as dimensões originais.
+  return np.dstack((p1, p2, p3)), (h,w)
+
+def unpadding(img, og):
+  return img[:og[0], :og[1], :]
+
+padded_img, og = padding(nature)
+
+unpadded_img = unpadding(padded_img, og)
+
+print(f'Dimensão Original: {nature.shape[:2]}')
+print(f'Dimensão Padded: {padded_img.shape[:2]}\nDimensão Unpadded: {unpadded_img.shape[:2]}')
+
+
+def RGB_to_YCbCr(img):
+  cm = np.array([[0.299, 0.587, 0.114],
+                [-0.168736, -0.331264, 0.5],
+                [0.5, -0.418688, -0.081312]])
+
+
 def encoder(img, isolate_rgb = False):
   if isolate_rgb:
     return isolate_rgb(img)
