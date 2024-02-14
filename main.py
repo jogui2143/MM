@@ -11,13 +11,25 @@ import numpy as np
 #um meio termo que permita ter um certo nível de compressão de imagem e que não comprometa a sua qualidade
 
 #2: criar o encoder e decoder
+'''
 def encoder(img):
     R, G, B = splitRGB(img)
     return R,G,B
+'''
 
-def decoder(R,G,B):
+def encoder(img, pad = False):
+  if pad:
+    return padding(img)
+
+def decoder(R,G,B,padded_img = None, og = None, unite_rgb = False, unpad = False):
+
+  if unite_rgb:
     imgRec = joinRGB(R, G, B)
     return imgRec
+  
+  elif unpad:
+    return unpadding(padded_img, og)
+
 
 #3.2 Crie uma função para implementar um colormap definido pelo utilizador.
 def newCmap(keyColors = [(0,0,0),(1,1,1)], name = "gray", N= 256):
@@ -50,6 +62,47 @@ def joinRGB(R,G,B):
     imgRec[:, :, 2] = B  # Define o canal azul
     return imgRec 
 
+#4.1. Encoder: Crie uma função para fazer padding dos canais RGB. 
+'''''
+Obs: Caso a dimensão da imagem não seja múltipla de 32x32, faça padding da mesma, replicando a última linha
+e a última coluna em conformidade.
+'''''
+def padding(img):
+  # Captura a altura (h) e a largura (ln) da imagem.
+  h,w = img.shape[:2]
+  p1, p2, p3 = splitRGB(img)
+
+  # Obtém as dimensões do primeiro canal de cor.
+  r,c = p1.shape
+
+  # Calcula quantos pixels faltam para a altura e a largura para serem múltiplos de 32.
+  # Se a dimensão já for múltiplo de 32, não adiciona nenhum pixel (0).
+  v_pad = 32 - (r % 32) if r % 32 > 0 else 0
+  h_pad = 32 - (c % 32) if c % 32 > 0 else 0  
+
+  # Adiciona pixels à última linha (replica a última linha) e à última coluna (replica a última coluna)
+  # para fazer com que as dimensões sejam múltiplas de 32.
+  # Faz isso para os três canais RGB separadamente.
+  p1 = np.vstack([p1, np.repeat(np.array(p1[-1,:], ndmin = 2), v_pad, axis=0)])
+  p1 = np.hstack([p1, np.repeat(np.array(p1[:,-1], ndmin = 2), h_pad, axis=0).T])
+
+  p2 = np.vstack([p2, np.repeat(np.array(p2[-1,:], ndmin = 2), v_pad, axis=0)])
+  p2 = np.hstack([p2, np.repeat(np.array(p2[:,-1], ndmin = 2), h_pad, axis=0).T])
+
+  p3 = np.vstack([p3, np.repeat(np.array(p3[-1,:], ndmin = 2), v_pad, axis=0)])
+  p3 = np.hstack([p3, np.repeat(np.array(p3[:,-1], ndmin = 2), h_pad, axis=0).T])
+
+  # Empilha os três canais de volta em uma imagem e retorna junto com as dimensões originais.
+  return np.dstack((p1, p2, p3)), (h,w)
+
+
+#4.2. Decoder: Crie também a função inversa para remover o padding. 
+'''''
+Obs: Certifique-se de que recupera os canais RGB com a dimensão original, visualizando a imagem original.
+'''''
+def unpadding(img, og):
+  return img[:og[0], :og[1], :]
+
 def main():
     # 3.1 Leia uma imagem .bmp, e.g., a imagem peppers.bmp.
     fname = "airport.bmp"
@@ -65,10 +118,11 @@ def main():
     showImg(img,fname,"Imagem original: ")
     
     #3.4 Encoder: Crie uma função para separar a imagem nos seus componentes RGB.
-    R,G,B = encoder(img)
+    padded_img, (h, w) = encoder(img, pad=True)
+    R, G, B = splitRGB(padded_img)
 
     #3.5 Decoder: Crie também a função inversa (que combine os 3 componentes RGB).
-    imgRec = decoder(R,G,B)
+    imgRec = decoder(R, G, B, og = (h,w),unite_rgb=True,unpad = True)
 
     #3.6 Visualize a imagem e cada um dos canais RGB (com o colormap adequado).
     showImg(R,fname,"Img Red: ",cm_red)
