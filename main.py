@@ -11,7 +11,7 @@ import numpy as np
 #um meio termo que permita ter um certo nível de compressão de imagem e que não comprometa a sua qualidade
 
 #2: criar o encoder e decoder
-def encoder(img, pad = False, split = False):
+def encoder(img, pad = False, split = False,RGB_to_YCBCR = False):
 
   if split:
      R, G, B = splitRGB(img)
@@ -19,8 +19,13 @@ def encoder(img, pad = False, split = False):
 
   elif pad:
     return padding(img)
+  
+  elif RGB_to_YCBCR:
+     return RGB_to_YCbCr(img)
+  
 
-def decoder(R,G,B,padded_img = None, og = None, unpad = False,join = False):
+
+def decoder(R,G,B,img_ycbcr = None,padded_img = None, og = None, unpad = False,join = False,YCBCR_to_RGB = False):
 
   if join:
      imgRec = joinRGB(R, G, B)
@@ -28,6 +33,10 @@ def decoder(R,G,B,padded_img = None, og = None, unpad = False,join = False):
 
   elif unpad:
     return unpadding(padded_img, og)
+  
+  elif YCBCR_to_RGB:
+     return YCbCr_to_RGB(img_ycbcr)
+  
 
 
 #3.2 Crie uma função para implementar um colormap definido pelo utilizador.
@@ -101,10 +110,55 @@ Obs: Certifique-se de que recupera os canais RGB com a dimensão original, visua
 def unpadding(img, og):
   return img[:og[0], :og[1], :]
 
+
+#5
+
+#5.1 Crie uma função para converter a imagem do modelo de cor RGB para o modelo de cor 
+#YCbCr. 
+def RGB_to_YCbCr(img):
+  cm = np.array([[0.299, 0.587, 0.114],
+                [-0.168736, -0.331264, 0.5],
+                [0.5, -0.418688, -0.081312]])
+
+  r = img[:,:,0]
+  g = img[:,:,1]
+  b = img[:,:,2]
+
+  y = cm[0,0]*r + cm[0,1]*g + cm[0,2]*b
+  cb = cm[1,0]*r + cm[1,1]*g + cm[1,2]*b + 128
+  cr = cm[2,0]*r + cm[2,1]*g + cm[2,2]*b + 128
+
+  return y, cb, cr
+
+#5.2  Crie também a função inversa (conversão de YCbCr para RGB). Nota: na conversão 
+#inversa, garanta que os valores R, G e B obtidos sejam números inteiros no intervalo {0, 1, …, 255}
+def YCbCr_to_RGB(img):
+  convmatrix = np.array([[0.299, 0.587, 0.114],
+                [-0.168736, -0.331264, 0.5],
+                [0.5, -0.418688, -0.081312]])
+  cm_inv = np.linalg.inv(convmatrix)
+
+  y = img[:,:,0]
+  cb = img[:,:,1] - 128
+  cr = img[:,:,2] - 128
+
+  r = cm_inv[0,0]*y + cm_inv[0,1]*cb + cm_inv[0,2]*cr
+  g = cm_inv[1,0]*y + cm_inv[1,1]*cb + cm_inv[1,2]*cr
+  b = cm_inv[2,0]*y + cm_inv[2,1]*cb + cm_inv[2,2]*cr
+
+  output_matrix = np.dstack((r, g, b))
+  output_matrix = np.round(output_matrix)
+  output_matrix[output_matrix > 255] = 255
+  output_matrix[output_matrix < 0] = 0
+  return output_matrix
+
 def main():
     # 3.1 Leia uma imagem .bmp, e.g., a imagem peppers.bmp.
-    fname = "nature.bmp"
+    fname = "Barns_grand_tetons.bmp"
     img = plt.imread(fname)
+    
+    #Extrair o pixel [0,0] para verificar se tudo correu bem no final
+    original_pixel = img[0, 0]
    
     #3.2 Crie uma função para implementar um colormap definido pelo utilizador.
     cm_red=newCmap([(0,0,0),(1,0,0)], "cm_red", 256)
@@ -121,7 +175,7 @@ def main():
     R, G, B = encoder(img,pad=False,split=True)
 
     #3.5 Decoder: Crie também a função inversa (que combine os 3 componentes RGB).
-    imgRec = decoder(R, G, B, og = None,unpad = False, join= True)
+    imgRec = decoder(R, G, B, img_ycbcr = None,og = None,unpad = False, join= True,YCBCR_to_RGB = False)
     
     #3.6 Visualize a imagem e cada um dos canais RGB (com o colormap adequado).
     showImg(R,fname,"Img Red: ",cm_red)
@@ -140,10 +194,65 @@ def main():
     '''''
     Obs: Certifique-se de que recupera os canais RGB com a dimensão original, visualizando a imagem original.
     '''''
-    unpadded_img = decoder(R,G,B,padded_img = padded_img, og = (h,w),unpad = True,join = False)
+    unpadded_img = decoder(R,G,B,img_ycbcr = None,padded_img = padded_img, og = (h,w),unpad = True,join = False,YCBCR_to_RGB = False)
     print("Dimensão Unpadded: " + str(unpadded_img.shape))  # Imprime as dimensões da imagem Unpadded
+
+    #5.3
+    #5.3.1 Converta os canais RGB para canais YCbCr
+
+    y,cb,cr = encoder(img,pad = False,split = False, RGB_to_YCBCR = True)
+
+    #5.3.2 Visualize cada um dos canais (com o colormap adequado) ----------->>>>>Que color map devemos usar???<<<<<------------
+    # Visualizar o canal Y usando mapa de cores em escala de cinza
+    showImg(y,fname,'Canal Y (Luminância)','gray')
+    
+    
+    # Visualizar o canal Cb com mapa de cores apropriado
+    showImg(cb,fname,'Canal Cb (Diferença de Azul)','Blues')
+    
+    
+    # Visualizar o canal Cr com mapa de cores apropriado
+    showImg(cr,fname,'Canal Cr (Diferença de Vermelho)','Reds')
+    
+
+    #5.4 Decoder: Recupere os canais RGB a partir dos canais YcbCr obtidos. Certifique-se de 
+    #que consegue obter os valores originais de RGB (teste, por exemplo, com o pixel de 
+    #coordenada [0, 0]).
+
+    #juntar os canais y,cb e cr numa imagem codificada
+    encoded_ycbcr_img = np.dstack((y, cb, cr))
+
+    #recuperar a imagem original
+    recovered_img = decoder(R,G,B,encoded_ycbcr_img,padded_img = padded_img, og = (h,w),unpad = False,join = False,YCBCR_to_RGB = True)
+
+
+    # Armazenar os valores RGB do pixel [0,0] da imagem após conversão
+    recovered_pixel = recovered_img[0, 0]
+
+
+    #recuperar os canais RGB 
+    R_decoded,G_decoded,B_decoded = splitRGB(recovered_img)
+
+    #verificar se os valores RGB do pixel [0,0] são os mesmos depois de todas as transformações
+    print(f'Original RGB pixel [0,0]: {original_pixel}')
+    print(f'Recovered RGB pixel [0,0]: {recovered_pixel}')
+
+
+
+
+
     
     return
+
+
+"""
+Ponto de situação:
+-->Ver dúvida do colormap
+-->Verificar se do ex4 para a frente está tudo ok
+-->rushar ex 6 e 7
+
+
+"""
 
 if __name__ == "__main__":
     main()
