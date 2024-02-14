@@ -26,22 +26,22 @@ def see_colormap(img, cm):
   #Mostrar a figura: exibir a figura inteira, que inclui a imagem com o colormap e a barra de cores correspondente, na tela
   plt.show()
 
-# aplicar um mapa de cores personalizado a uma imagem em escala de cinza e depois visualizá-la com esse mapa de cores
-def colormap(img, cmap):
-  img = grayscale(img)
-  #mapa de cores personalizado é criado a partir de uma lista de cores (cmap) fornecida pelo usuário.
-  cm = clr.LinearSegmentedColormap.from_list('cmap', cmap, 256)
-  #exibir a imagem em escala de cinza com o colormap aplicado
-  see_colormap(img, cm)
-
 #3.1. Leia uma imagem .bmp
 def readImg(loc):
   return mpimg.imread(loc)
 
 #3.2. Crie uma função para implementar um colormap definido pelo utilizador
-def user_colormap(img):
- #arrumar 
- colormap(img, colors)
+# aplicar um mapa de cores personalizado a uma imagem em escala de cinza e depois visualizá-la com esse mapa de cores
+def colormap(img, cmap = [(0,0,0),(1,1,1)], name='gray', N=256):
+  cmap_name = name
+  #mapa de cores personalizado é criado a partir de uma lista de cores (cmap) fornecida pelo usuário.
+  cm = clr.LinearSegmentedColormap.from_list('cmap', cmap, N)
+  return cm
+
+#CONTINUAR DAQUI
+
+#separar canais RGB
+
 
 #3.4. Encoder: Crie uma função para separar a imagem nos seus componentes RGB. 
 def encoder(img, isolate_rgb = False):
@@ -55,8 +55,7 @@ def decoder(img, unite_rgb = False):
   
 #3.3. Crie uma função que permita visualizar a imagem com um dado colormap.
 nature = readImg('nature.bmp')
-user_colormap(nature)
-
+#user_colormap(nature)
 
 
 def isolate_rgb(img):
@@ -86,9 +85,6 @@ def show_rgb_channels(img):
   show_imgs(['Red', 'Green', 'Blue'], (r, g, b), cm=[red, green, blue])
 
 #show_rgb_channels(nature)
-
-
-
 
 def pad_channel(channel):
   """
