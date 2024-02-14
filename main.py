@@ -38,8 +38,7 @@ def newCmap(keyColors = [(0,0,0),(1,1,1)], name = "gray", N= 256):
 
 #3.3 Crie uma função que permita visualizar a imagem com um dado colormap.
 def showImg(img, fname="", caption="", cmap=None):
-    print(img.shape)  # Imprime as dimensões da imagem
-    print(img.dtype)  # Imprime o tipo de dados da imagem
+    #print(img.dtype)  # Imprime o tipo de dados da imagem
     plt.figure()  # Cria uma nova figura
     plt.imshow(img, cmap)  # Mostra a imagem com o mapa de cores aplicado
     plt.axis('off')  # Remove os eixos
@@ -105,7 +104,7 @@ def unpadding(img, og):
 
 def main():
     # 3.1 Leia uma imagem .bmp, e.g., a imagem peppers.bmp.
-    fname = "airport.bmp"
+    fname = "nature.bmp"
     img = plt.imread(fname)
    
     #3.2 Crie uma função para implementar um colormap definido pelo utilizador.
@@ -116,13 +115,19 @@ def main():
 
     #3.3 Crie uma função que permita visualizar a imagem com um dado colormap.
     showImg(img,fname,"Imagem original: ")
+
+    print(img.shape)  # Imprime as dimensões da imagem
     
     #3.4 Encoder: Crie uma função para separar a imagem nos seus componentes RGB.
     padded_img, (h, w) = encoder(img, pad=True)
     R, G, B = splitRGB(padded_img)
 
+    print(padded_img.shape)  # Imprime as dimensões da imagem
+
     #3.5 Decoder: Crie também a função inversa (que combine os 3 componentes RGB).
     imgRec = decoder(R, G, B, og = (h,w),unite_rgb=True,unpad = True)
+    
+    print(imgRec.shape)  # Imprime as dimensões da imagem
 
     #3.6 Visualize a imagem e cada um dos canais RGB (com o colormap adequado).
     showImg(R,fname,"Img Red: ",cm_red)
