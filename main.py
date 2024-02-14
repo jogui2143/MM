@@ -25,29 +25,29 @@ def newCmap(keyColors = [(0,0,0),(1,1,1)], name = "gray", N= 256):
     return cm
 
 #3.3 Crie uma função que permita visualizar a imagem com um dado colormap.
-def showImg(img, fname="",caption="",cmap=None):
-    print(img.shape)
-    print(img.dtype)
-    plt.figure()
-    plt.imshow(img,cmap)
-    plt.axis('off')
-    plt.title(caption+fname)
-    plt.show()
+def showImg(img, fname="", caption="", cmap=None):
+    print(img.shape)  # Imprime as dimensões da imagem
+    print(img.dtype)  # Imprime o tipo de dados da imagem
+    plt.figure()  # Cria uma nova figura
+    plt.imshow(img, cmap)  # Mostra a imagem com o mapa de cores aplicado
+    plt.axis('off')  # Remove os eixos
+    plt.title(caption + fname)  # Define o título da imagem
+    plt.show()  # Exibe a imagem
 
 #3.4. Encoder: Crie uma função para separar a imagem nos seus componentes RGB.
 def splitRGB(img):
-    R = img[:,:,0]
-    G = img[:,:,1]
-    B = img[:,:,2]
+    R = img[:, :, 0]  # Extrai o canal vermelho
+    G = img[:, :, 1]  # Extrai o canal verde
+    B = img[:, :, 2]  # Extrai o canal azul
     return R, G, B
 
 #3.5. Decoder: Crie também a função inversa (que combine os 3 componentes RGB).
 def joinRGB(R,G,B):
-    nl,nc=R.shape
-    imgRec = np.zeros((nl,nc,3),dtype=np.uint8)
-    imgRec[:,:,0] = R
-    imgRec[:,:,1] = G
-    imgRec[:,:,2] = B
+    nl, nc = R.shape  # Obtém as dimensões da imagem a partir do canal vermelho
+    imgRec = np.zeros((nl, nc, 3), dtype=np.uint8)  # Cria uma nova imagem vazia
+    imgRec[:, :, 0] = R  # Define o canal vermelho
+    imgRec[:, :, 1] = G  # Define o canal verde
+    imgRec[:, :, 2] = B  # Define o canal azul
     return imgRec 
 
 def main():
