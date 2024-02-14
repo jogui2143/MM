@@ -11,18 +11,22 @@ import numpy as np
 #um meio termo que permita ter um certo nível de compressão de imagem e que não comprometa a sua qualidade
 
 #2: criar o encoder e decoder
-'''
-def encoder(img):
-    R, G, B = splitRGB(img)
-    return R,G,B
-'''
+def encoder(img, pad = False, split = False):
 
-def encoder(img, pad = False):
-  if pad:
+  if split:
+     R, G, B = splitRGB(img)
+     return R,G,B
+
+  elif pad:
     return padding(img)
 
-def decoder(padded_img = None, og = None, unpad = False):
-  if unpad:
+def decoder(R,G,B,padded_img = None, og = None, unpad = False,join = False):
+
+  if join:
+     imgRec = joinRGB(R, G, B)
+     return imgRec
+
+  elif unpad:
     return unpadding(padded_img, og)
 
 
@@ -111,23 +115,33 @@ def main():
     #3.3 Crie uma função que permita visualizar a imagem com um dado colormap.
     showImg(img,fname,"Imagem original: ")
 
-    print(img.shape)  # Imprime as dimensões da imagem
+    print("Dimensão Original: " + str(img.shape))  # Imprime as dimensões da imagem original
     
     #3.4 Encoder: Crie uma função para separar a imagem nos seus componentes RGB.
-    padded_img, (h, w) = encoder(img, pad=True)
-    R, G, B = splitRGB(padded_img)
-
-    print(padded_img.shape)  # Imprime as dimensões da imagem
+    R, G, B = encoder(img,pad=False,split=True)
 
     #3.5 Decoder: Crie também a função inversa (que combine os 3 componentes RGB).
-
-    unpadded_img = decoder(padded_img = padded_img, og = (h,w),unpad = True)
-    print(unpadded_img.shape)  # Imprime as dimensões da imagem
-
+    imgRec = decoder(R, G, B, og = None,unpad = False, join= True)
+    
     #3.6 Visualize a imagem e cada um dos canais RGB (com o colormap adequado).
     showImg(R,fname,"Img Red: ",cm_red)
     showImg(G,fname,"Img Green: ",cm_green)
     showImg(B,fname,"Img Blue: ",cm_blue)
+
+    #4.1. Encoder: Crie uma função para fazer padding dos canais RGB. 
+    '''''
+    Obs: Caso a dimensão da imagem não seja múltipla de 32x32, faça padding da mesma, replicando a última linha
+    e a última coluna em conformidade.
+    '''''
+    padded_img, (h, w) = encoder(img, pad=True, split=False)
+    print("Dimensão Padded: "+ str(padded_img.shape))  # Imprime as dimensões da imagem padded
+
+    #4.2. Decoder: Crie também a função inversa para remover o padding. 
+    '''''
+    Obs: Certifique-se de que recupera os canais RGB com a dimensão original, visualizando a imagem original.
+    '''''
+    unpadded_img = decoder(R,G,B,padded_img = padded_img, og = (h,w),unpad = True,join = False)
+    print("Dimensão Unpadded: " + str(unpadded_img.shape))  # Imprime as dimensões da imagem Unpadded
     
     return
 
