@@ -21,13 +21,8 @@ def encoder(img, pad = False):
   if pad:
     return padding(img)
 
-def decoder(R,G,B,padded_img = None, og = None, unite_rgb = False, unpad = False):
-
-  if unite_rgb:
-    imgRec = joinRGB(R, G, B)
-    return imgRec
-  
-  elif unpad:
+def decoder(padded_img = None, og = None, unpad = False):
+  if unpad:
     return unpadding(padded_img, og)
 
 
@@ -125,9 +120,9 @@ def main():
     print(padded_img.shape)  # Imprime as dimensões da imagem
 
     #3.5 Decoder: Crie também a função inversa (que combine os 3 componentes RGB).
-    imgRec = decoder(R, G, B, og = (h,w),unite_rgb=True,unpad = True)
-    
-    print(imgRec.shape)  # Imprime as dimensões da imagem
+
+    unpadded_img = decoder(padded_img = padded_img, og = (h,w),unpad = True)
+    print(unpadded_img.shape)  # Imprime as dimensões da imagem
 
     #3.6 Visualize a imagem e cada um dos canais RGB (com o colormap adequado).
     showImg(R,fname,"Img Red: ",cm_red)
