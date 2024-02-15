@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.colors as clr
 import numpy as np
+import turtle as tt
 
 #1. Compressão de imagens bmp no formato jpeg utilizando um editor de imagem (e.g., GIMP).
 #1.1. Comprima as imagens fornecidas segundo o codec JPEG, com qualidade alta (Q=75).
