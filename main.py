@@ -154,19 +154,63 @@ def YCbCr_to_RGB(img):
   return output_matrix
 
 
-  #6. Sub-amostragem.
-  #6.1. Crie uma função para sub-amostrar (downsampling) os canais Y, Cb, e Cr, segundo as
-  #possibilidades definidas pelo codec JPEG, a qual deve devolver Y_d, Cb_d e Cr_d.
-  '''
-  #Obs: Utilize, para o efeito, a função cv2.resize (biblioteca Computer Vision), testando
-  #diferentes métodos de interpolação (e.g., linear, cúbica, etc.).
-  '''
+#6. Sub-amostragem.
+#6.1. Crie uma função para sub-amostrar (downsampling) os canais Y, Cb, e Cr, segundo as
+#possibilidades definidas pelo codec JPEG, a qual deve devolver Y_d, Cb_d e Cr_d.
+'''
+#Obs: Utilize, para o efeito, a função cv2.resize (biblioteca Computer Vision), testando
+#diferentes métodos de interpolação (e.g., linear, cúbica, etc.).
+'''
 
-  '''
-  def sub_amostragem(Y,Cb,Cr){
-     
-  }
-  '''
+'''
+Reduz o tamanho de um canal de imagem usando a função cv2.resize.
+
+Parâmetros:
+- channel: Canal de imagem a ser sub-amostrado (Y, Cb ou Cr).
+- target_size: Tupla com as dimensões alvo (largura, altura).
+- interpolation: Método de interpolação a ser utilizado.
+
+Retorna:
+- Canal de imagem sub-amostrado.
+
+Obs: cv2.INTER_CUBIC
+'''
+
+def downsample_channel(channel, target_size = None, interpolation=cv2.INTER_LINEAR):
+  
+    return cv2.resize(channel, target_size, interpolation=interpolation)
+
+#6.3. Encoder: Obtenha e visualize os canais Y_d, Cb_d e Cr_d com downsampling 4:2:0.
+#Apresente as dimensões das matrizes correspondentes.
+'''
+Sub-amostra os canais Y, Cb, e Cr de uma imagem conforme definido pelo codec JPEG.
+
+Parâmetros:
+- Y, Cb, Cr: Canais de imagem a serem sub-amostrados.
+- sampling: String definindo a taxa de sub-amostragem ('4:2:0', '4:2:2', '4:4:4').
+- interpolation: Método de interpolação a ser utilizado.
+
+Retorna:
+- Tupla com os canais Y, Cb, e Cr sub-amostrados.
+'''
+
+def downsample_ycbcr(Y, Cb, Cr, sampling='4:2:0', interpolation=cv2.INTER_LINEAR):
+    
+    height, width = Y.shape
+    
+    if sampling == '4:2:0':
+        # Reduz Cb e Cr para metade na largura e altura
+        target_size = (width // 2, height // 2)
+    elif sampling == '4:2:2':
+        # Reduz Cb e Cr para metade apenas na largura
+        target_size = (width // 2, height)
+
+    # Downsample Cb e Cr
+    Cb_d = downsample_channel(Cb, target_size, interpolation)
+    Cr_d = downsample_channel(Cr, target_size, interpolation)
+
+    # Y não é sub-amostrado em termos de resolução
+    return Y, Cb_d, Cr_d
 
 def main():
     # 3.1 Leia uma imagem .bmp, e.g., a imagem peppers.bmp.
@@ -259,7 +303,6 @@ def main():
     #verificar se os valores RGB do pixel [0,0] são os mesmos depois de todas as transformações
     print(f'Original RGB pixel [0,0]: {original_pixel}')
     print(f'Recovered RGB pixel [0,0]: {recovered_pixel}')
-
 
     return
 
