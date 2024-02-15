@@ -7,7 +7,7 @@ import numpy as np
 def readImg(loc):
   return mpimg.imread(loc)
 
-#nature = readImg('nature.bmp')
+nature = readImg('nature.bmp')
 
 def grayscale(img):
   #esses coeficientes são uma convenção para converter para escala de cinza :)
@@ -33,7 +33,7 @@ def user_colormap(img):
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ### Teste do colormap
-#user_colormap(nature)
+user_colormap(nature)
 
 def isolate_rgb(img):
   return img[:,:,0], img[:,:,1], img[:,:,2]
@@ -164,11 +164,11 @@ def decoder(img, padded_img = None, og = None, unite_rgb = False, unpad = False,
   elif ycbcr_to_rgb:
     return YCbCr_to_RGB(img)
 
-def main():
-  nature = readImg('nature.bmp')
-  ((R,G,B)),(h,w) = encoder(nature, pad=True)
-  decoder(nature,padded_img = (R,G,B), og = (h,w),unpad=True)
-  return
+# def main():
+#   nature = readImg('nature.bmp')
+#   ((R,G,B)),(h,w) = encoder(nature, pad=True)
+#   decoder(nature,padded_img = (R,G,B), og = (h,w),unpad=True)
+#   return
 
-if __name__ == "__main__":
-  main()
+# if __name__ == "__main__":
+#   main()
