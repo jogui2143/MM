@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.colors as clr
 import numpy as np
+import cv2
 
 #1. Compressão de imagens bmp no formato jpeg utilizando um editor de imagem (e.g., GIMP).
 #1.1. Comprima as imagens fornecidas segundo o codec JPEG, com qualidade alta (Q=75).
@@ -193,9 +194,11 @@ def main():
     imgRec = decoder(R, G, B, img_ycbcr = None,og = None,unpad = False, join= True,YCBCR_to_RGB = False)
     
     #3.6 Visualize a imagem e cada um dos canais RGB (com o colormap adequado).
+    '''
     showImg(R,fname,"Img Red: ",cm_red)
     showImg(G,fname,"Img Green: ",cm_green)
     showImg(B,fname,"Img Blue: ",cm_blue)
+    '''
 
     #4.1. Encoder: Crie uma função para fazer padding dos canais RGB. 
     '''''
@@ -205,6 +208,12 @@ def main():
     padded_img, (h, w) = encoder(img, pad=True, split=False)
     print("Dimensão Padded: "+ str(padded_img.shape))  # Imprime as dimensões da imagem padded
 
+    #3.6 com padding
+    R,G,B = splitRGB(padded_img)
+    showImg(R,fname,"Img Red: ",cm_red)
+    showImg(G,fname,"Img Green: ",cm_green)
+    showImg(B,fname,"Img Blue: ",cm_blue)
+
     #4.2. Decoder: Crie também a função inversa para remover o padding. 
     '''''
     Obs: Certifique-se de que recupera os canais RGB com a dimensão original, visualizando a imagem original.
@@ -213,10 +222,9 @@ def main():
     print("Dimensão Unpadded: " + str(unpadded_img.shape))  # Imprime as dimensões da imagem Unpadded
 
     #5.3
-    #5.3.1 Converta os canais RGB para canais YCbCr
-
-    y,cb,cr = encoder(img,pad = False,split = False, RGB_to_YCBCR = True)
-
+    #5.3.1 Converta os canais RGB para canais YCbCr (Com paddding)
+    y,cb,cr = encoder(padded_img,pad = False,split = False, RGB_to_YCBCR = True)
+    
     #5.3.2 Visualize cada um dos canais (com o colormap adequado) ----------->>>>>Que color map devemos usar???<<<<<------------
     # Visualizar o canal Y usando mapa de cores em escala de cinza
     showImg(y,fname,'Canal Y (Luminância)','gray')
@@ -258,8 +266,6 @@ def main():
 
 """
 Ponto de situação:
--->Ver dúvida do colormap
--->Verificar se do ex4 para a frente está tudo ok
 -->rushar ex 6 e 7
 """
 
