@@ -12,37 +12,30 @@ import numpy as np
 
 #2: criar o encoder e decoder
 def encoder(img, pad = False, split = False,RGB_to_YCBCR = False):
-
   if split:
      R, G, B = splitRGB(img)
      return R,G,B
-
   elif pad:
     return padding(img)
-  
   elif RGB_to_YCBCR:
      return RGB_to_YCbCr(img)
-  
 
 
 def decoder(R,G,B,img_ycbcr = None,padded_img = None, og = None, unpad = False,join = False,YCBCR_to_RGB = False):
-
   if join:
      imgRec = joinRGB(R, G, B)
      return imgRec
-
   elif unpad:
     return unpadding(padded_img, og)
-  
   elif YCBCR_to_RGB:
      return YCbCr_to_RGB(img_ycbcr)
   
-
 
 #3.2 Crie uma função para implementar um colormap definido pelo utilizador.
 def newCmap(keyColors = [(0,0,0),(1,1,1)], name = "gray", N= 256):
     cm = clr.LinearSegmentedColormap.from_list(name, keyColors, N)
     return cm
+
 
 #3.3 Crie uma função que permita visualizar a imagem com um dado colormap.
 def showImg(img, fname="", caption="", cmap=None):
@@ -53,12 +46,14 @@ def showImg(img, fname="", caption="", cmap=None):
     plt.title(caption + fname)  # Define o título da imagem
     plt.show()  # Exibe a imagem
 
+
 #3.4. Encoder: Crie uma função para separar a imagem nos seus componentes RGB.
 def splitRGB(img):
     R = img[:, :, 0]  # Extrai o canal vermelho
     G = img[:, :, 1]  # Extrai o canal verde
     B = img[:, :, 2]  # Extrai o canal azul
     return R, G, B
+
 
 #3.5. Decoder: Crie também a função inversa (que combine os 3 componentes RGB).
 def joinRGB(R,G,B):
@@ -69,11 +64,12 @@ def joinRGB(R,G,B):
     imgRec[:, :, 2] = B  # Define o canal azul
     return imgRec 
 
+
 #4.1. Encoder: Crie uma função para fazer padding dos canais RGB. 
-'''''
+'''
 Obs: Caso a dimensão da imagem não seja múltipla de 32x32, faça padding da mesma, replicando a última linha
 e a última coluna em conformidade.
-'''''
+'''
 def padding(img):
   # Captura a altura (h) e a largura (ln) da imagem.
   h,w = img.shape[:2]
@@ -112,7 +108,6 @@ def unpadding(img, og):
 
 
 #5
-
 #5.1 Crie uma função para converter a imagem do modelo de cor RGB para o modelo de cor 
 #YCbCr. 
 def RGB_to_YCbCr(img):
@@ -206,15 +201,12 @@ def main():
     # Visualizar o canal Y usando mapa de cores em escala de cinza
     showImg(y,fname,'Canal Y (Luminância)','gray')
     
-    
     # Visualizar o canal Cb com mapa de cores apropriado
     showImg(cb,fname,'Canal Cb (Diferença de Azul)','Blues')
-    
     
     # Visualizar o canal Cr com mapa de cores apropriado
     showImg(cr,fname,'Canal Cr (Diferença de Vermelho)','Reds')
     
-
     #5.4 Decoder: Recupere os canais RGB a partir dos canais YcbCr obtidos. Certifique-se de 
     #que consegue obter os valores originais de RGB (teste, por exemplo, com o pixel de 
     #coordenada [0, 0]).
@@ -225,10 +217,8 @@ def main():
     #recuperar a imagem original
     recovered_img = decoder(R,G,B,encoded_ycbcr_img,padded_img = padded_img, og = (h,w),unpad = False,join = False,YCBCR_to_RGB = True)
 
-
     # Armazenar os valores RGB do pixel [0,0] da imagem após conversão
     recovered_pixel = recovered_img[0, 0]
-
 
     #recuperar os canais RGB 
     R_decoded,G_decoded,B_decoded = splitRGB(recovered_img)
@@ -237,21 +227,13 @@ def main():
     print(f'Original RGB pixel [0,0]: {original_pixel}')
     print(f'Recovered RGB pixel [0,0]: {recovered_pixel}')
 
-
-
-
-
-    
     return
-
 
 """
 Ponto de situação:
 -->Ver dúvida do colormap
 -->Verificar se do ex4 para a frente está tudo ok
 -->rushar ex 6 e 7
-
-
 """
 
 if __name__ == "__main__":
