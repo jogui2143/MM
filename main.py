@@ -152,9 +152,24 @@ def YCbCr_to_RGB(img):
   output_matrix[output_matrix < 0] = 0
   return output_matrix
 
+
+  #6. Sub-amostragem.
+  #6.1. Crie uma função para sub-amostrar (downsampling) os canais Y, Cb, e Cr, segundo as
+  #possibilidades definidas pelo codec JPEG, a qual deve devolver Y_d, Cb_d e Cr_d.
+  '''
+  #Obs: Utilize, para o efeito, a função cv2.resize (biblioteca Computer Vision), testando
+  #diferentes métodos de interpolação (e.g., linear, cúbica, etc.).
+  '''
+
+  '''
+  def sub_amostragem(Y,Cb,Cr){
+     
+  }
+  '''
+
 def main():
     # 3.1 Leia uma imagem .bmp, e.g., a imagem peppers.bmp.
-    fname = "Barns_grand_tetons.bmp"
+    fname = "airport.bmp"
     img = plt.imread(fname)
     
     #Extrair o pixel [0,0] para verificar se tudo correu bem no final
@@ -208,11 +223,11 @@ def main():
     
     
     # Visualizar o canal Cb com mapa de cores apropriado
-    showImg(cb,fname,'Canal Cb (Diferença de Azul)','Blues')
+    showImg(cb,fname,'Canal Cb (Diferença de Azul)','gray')
     
     
     # Visualizar o canal Cr com mapa de cores apropriado
-    showImg(cr,fname,'Canal Cr (Diferença de Vermelho)','Reds')
+    showImg(cr,fname,'Canal Cr (Diferença de Vermelho)','gray')
     
 
     #5.4 Decoder: Recupere os canais RGB a partir dos canais YcbCr obtidos. Certifique-se de 
