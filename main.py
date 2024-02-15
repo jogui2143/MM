@@ -161,12 +161,23 @@ def YCbCr_to_RGB(img):
   #Obs: Utilize, para o efeito, a função cv2.resize (biblioteca Computer Vision), testando
   #diferentes métodos de interpolação (e.g., linear, cúbica, etc.).
   '''
+  
+def sub_amostragem(Y,Cb,Cr):
+  
 
-  '''
-  def sub_amostragem(Y,Cb,Cr){
-     
-  }
-  '''
+     width = int(Cb.shape[1] )
+     height = int(Cb.shape[0])
+     dim = (width, height)
+
+     resized = cv2.resize(Cb, dim, interpolation = cv2.INTER_LINEAR)
+ 
+     print('Resized Dimensions : ',resized.shape)
+ 
+     cv2.imshow("Resized image", resized)
+     cv2.waitKey(0)
+     cv2.destroyAllWindows()
+  
+  
 
 def main():
     # 3.1 Leia uma imagem .bmp, e.g., a imagem peppers.bmp.
@@ -259,6 +270,7 @@ def main():
     #verificar se os valores RGB do pixel [0,0] são os mesmos depois de todas as transformações
     print(f'Original RGB pixel [0,0]: {original_pixel}')
     print(f'Recovered RGB pixel [0,0]: {recovered_pixel}')
+    sub_amostragem(y,cb,cr)
 
 
     return
