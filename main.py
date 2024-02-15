@@ -161,26 +161,63 @@ def YCbCr_to_RGB(img):
   #Obs: Utilize, para o efeito, a função cv2.resize (biblioteca Computer Vision), testando
   #diferentes métodos de interpolação (e.g., linear, cúbica, etc.).
   '''
-  
-def sub_amostragem(Y,Cb,Cr):
-  
 
-     width = int(Cb.shape[1] )
-     height = int(Cb.shape[0])
-     dim = (width, height)
 
-     resized = cv2.resize(Cb, dim, interpolation = cv2.INTER_LINEAR)
- 
-     print('Resized Dimensions : ',resized.shape)
- 
-     cv2.imshow("Resized image", resized)
-     cv2.waitKey(0)
-     cv2.destroyAllWindows()
+def sub_amostragem(Y, Cb, Cr):
+    #Tipos de subamostragem mais usados no JPEG
+    subsampling_types = ['4:4:4', '4:2:2', '4:2:0', '4:1:1']
+     
+    #percorre a lista de subamostragens
+    for subsampling_type in subsampling_types:
+        
+        
+        width, height = Y.shape[1], Y.shape[0]
+
+       # os valores aqui defenidos dividir por metade um quarto é a maneira como o JPEG funciona para os varios tipos de subamostragem
+       #se for do tipo 4:4:4 não é preciso redimensionar
+        if subsampling_type == '4:4:4':
+            Cb_d, Cr_d = Cb, Cr
+
+        elif subsampling_type == '4:2:2':
+            # reduzimos para metade a resolução horizontal do Cb e do Cr
+            Cb_d = cv2.resize(Cb, (width // 2, height), interpolation=cv2.INTER_AREA)
+            Cr_d = cv2.resize(Cr, (width // 2, height), interpolation=cv2.INTER_AREA)
+
+        elif subsampling_type == '4:2:0':
+            # reduzimos para metade a resolução horizontal e vertical do Cb e do Cr
+            Cb_d = cv2.resize(Cb, (width // 2, height // 2), interpolation=cv2.INTER_AREA)
+            Cr_d = cv2.resize(Cr, (width // 2, height // 2), interpolation=cv2.INTER_AREA)
+
+        elif subsampling_type == '4:1:1':
+             # reduzimos para um quarto a resolução horizontaldo Cb e do Cr
+            Cb_d = cv2.resize(Cb, (width // 4, height), interpolation=cv2.INTER_AREA)
+            Cr_d = cv2.resize(Cr, (width // 4, height), interpolation=cv2.INTER_AREA)
+
+        # Display the channels 
+        plt.figure(figsize=(12, 4))
+        plt.subplot(1, 3, 1)
+        plt.imshow(Y, cmap='gray')
+        plt.title('Y Channel')
+        plt.subplot(1, 3, 2)
+        plt.imshow(Cb_d, cmap='gray')
+        plt.title(f'Cb Channel\n{subsampling_type}')
+        plt.subplot(1, 3, 3)
+        plt.imshow(Cr_d, cmap='gray')
+        plt.title(f'Cr Channel\n{subsampling_type}')
+        plt.tight_layout()
+        plt.show()
+
+
+     
   
   
 
 def main():
     # 3.1 Leia uma imagem .bmp, e.g., a imagem peppers.bmp.
+
+
+    
+
     fname = "airport.bmp"
     img = plt.imread(fname)
     
@@ -253,6 +290,10 @@ def main():
     #que consegue obter os valores originais de RGB (teste, por exemplo, com o pixel de 
     #coordenada [0, 0]).
 
+
+    
+
+
     #juntar os canais y,cb e cr numa imagem codificada
     encoded_ycbcr_img = np.dstack((y, cb, cr))
 
@@ -270,7 +311,10 @@ def main():
     #verificar se os valores RGB do pixel [0,0] são os mesmos depois de todas as transformações
     print(f'Original RGB pixel [0,0]: {original_pixel}')
     print(f'Recovered RGB pixel [0,0]: {recovered_pixel}')
-    sub_amostragem(y,cb,cr)
+
+    sub_amostragem(y, cb, cr)
+
+    
 
 
     return
