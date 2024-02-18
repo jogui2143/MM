@@ -3,13 +3,7 @@ import matplotlib.colors as clr
 import numpy as np
 import cv2
 
-#1. Compressão de imagens bmp no formato jpeg utilizando um editor de imagem (e.g., GIMP).
-#1.1. Comprima as imagens fornecidas segundo o codec JPEG, com qualidade alta (Q=75).
-#1.2. Comprima as imagens fornecidas segundo o codec JPEG, com qualidade média (Q=50).
-#1.3. Comprima as imagens fornecidas segundo o codec JPEG, com qualidade baixa (Q=25).
-#1.4. Compare os resultados e tire conclusões.
-#Conclusão: Quanto maior for a taxa de compressão pior será a qualidade da imagem, sendo então o ideal encontrar
-#um meio termo que permita ter um certo nível de compressão de imagem e que não comprometa a sua qualidade
+
 
 #2: criar o encoder e decoder
 def encoder(img, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y=None, Cb=None, Cr=None, subsampling_type=None, interpolation=None):
@@ -467,8 +461,9 @@ def main():
 
 """
 Ponto de situação:
--->rushar ex 6 e 7
-    --> Fazer o 6.2, 6.4, 6.5 e relatório com Jupter do 5 e 6
+-->rushar ex  7
+-->Perguntar ao professor as diferenças entre a interpolação e se os resultados visuais fazem sentido (Nós não notamos bem)
+    
 """
 
 if __name__ == "__main__":
