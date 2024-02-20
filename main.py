@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.colors as clr
 import numpy as np
-import scipy
+from scipy.fftpack import dct, idct
 import cv2
 
 
@@ -192,17 +192,17 @@ def upsampling(Y_d,Cb_d,Cr_d,interpolation):
 
 
 def DCT(Y, Cb, Cr):
-   
-    Y_dct = scipy.fftpack.dct(Y, type=2, norm=None)
-    Cb_dct = scipy.fftpack.dct(Cb, type=2, norm=None)
-    Cr_dct = scipy.fftpack.dct(Cr, type=2, norm=None)
+    # Applying DCT
+    Y_dct = dct(dct(Y, norm='ortho').T, norm='ortho').T
+    Cb_dct = dct(dct(Cb, norm='ortho').T, norm='ortho').T
+    Cr_dct = dct(dct(Cr, norm='ortho').T, norm='ortho').T
     
- 
+    # Log transformation for better visualization
     Y_dct_log = np.log(np.abs(Y_dct) + 0.0001)
     Cb_dct_log = np.log(np.abs(Cb_dct) + 0.0001)
     Cr_dct_log = np.log(np.abs(Cr_dct) + 0.0001)
 
-   
+    # Displaying DCT images
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 3, 1)
     plt.imshow(Y_dct_log, cmap='gray')
@@ -216,20 +216,22 @@ def DCT(Y, Cb, Cr):
     plt.tight_layout()
     plt.show()
 
-    Y_inv_dct = scipy.fftpack.idct(Y_dct, type=2, norm=None)
-    Cb_inv_dct = scipy.fftpack.idct(Cb_dct, type=2, norm=None)
-    Cr_inv_dct = scipy.fftpack.idct(Cr_dct, type=2, norm=None)
+    # Applying IDCT
+    Y_inv_dct = idct(idct(Y_dct, norm='ortho').T, norm='ortho').T
+    Cb_inv_dct = idct(idct(Cb_dct, norm='ortho').T, norm='ortho').T
+    Cr_inv_dct = idct(idct(Cr_dct, norm='ortho').T, norm='ortho').T
 
+    # Displaying inverse DCT images
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 3, 1)
     plt.imshow(Y_inv_dct, cmap='gray')
-    plt.title('Log DCT of Y')
+    plt.title('Inverse DCT of Y')
     plt.subplot(1, 3, 2)
     plt.imshow(Cb_inv_dct, cmap='gray')
-    plt.title('Log DCT of Cb')
+    plt.title('Inverse DCT of Cb')
     plt.subplot(1, 3, 3)
     plt.imshow(Cr_inv_dct, cmap='gray')
-    plt.title('Log DCT of Cr')
+    plt.title('Inverse DCT of Cr')
     plt.tight_layout()
     plt.show()
 
@@ -240,7 +242,7 @@ def DCT(Y, Cb, Cr):
 def main():
     
     # 3.1 Leia uma imagem .bmp, e.g., a imagem peppers.bmp.
-    fname = "geometric.bmp"
+    fname = "airport.bmp"
     img = plt.imread(fname)
     
     #Extrair o pixel [0,0] para verificar se tudo correu bem no final
