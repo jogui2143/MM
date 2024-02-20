@@ -1,32 +1,29 @@
 import matplotlib.pyplot as plt
 import matplotlib.colors as clr
 import numpy as np
+import scipy
 import cv2
 
-#1. Compressão de imagens bmp no formato jpeg utilizando um editor de imagem (e.g., GIMP).
-#1.1. Comprima as imagens fornecidas segundo o codec JPEG, com qualidade alta (Q=75).
-#1.2. Comprima as imagens fornecidas segundo o codec JPEG, com qualidade média (Q=50).
-#1.3. Comprima as imagens fornecidas segundo o codec JPEG, com qualidade baixa (Q=25).
-#1.4. Compare os resultados e tire conclusões.
-#Conclusão: Quanto maior for a taxa de compressão pior será a qualidade da imagem, sendo então o ideal encontrar
-#um meio termo que permita ter um certo nível de compressão de imagem e que não comprometa a sua qualidade
+
 
 #2: criar o encoder e decoder
-def encoder(img, pad = False, split = False,RGB_to_YCBCR = False):
+def encoder(img, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y=None, Cb=None, Cr=None, subsampling_type=None, interpolation=None):
 
   if split:
-     R, G, B = splitRGB(img)
-     return R,G,B
+    R, G, B = splitRGB(img)
+    return R, G, B
 
   elif pad:
     return padding(img)
-  
+
   elif RGB_to_YCBCR:
-     return RGB_to_YCbCr(img)
-  
+    return RGB_to_YCbCr(img)
 
-
-def decoder(R,G,B,img_ycbcr = None,padded_img = None, og = None, unpad = False,join = False,YCBCR_to_RGB = False):
+  elif sub:
+    return sub_amostragem(Y, Cb, Cr, subsampling_type, interpolation)
+     
+ 
+def decoder(R=None,G=None,B=None,img_ycbcr = None,padded_img = None, og = None, unpad = False,join = False,YCBCR_to_RGB = False, up = False, Y_d = None, Cb_d = None, Cr_d = None, interpolation = None):
 
   if join:
      imgRec = joinRGB(R, G, B)
@@ -37,6 +34,9 @@ def decoder(R,G,B,img_ycbcr = None,padded_img = None, og = None, unpad = False,j
   
   elif YCBCR_to_RGB:
      return YCbCr_to_RGB(img_ycbcr)
+  
+  elif up:
+    return upsampling(Y_d,Cb_d,Cr_d,interpolation)
   
 
 
@@ -153,71 +153,74 @@ def YCbCr_to_RGB(img):
   output_matrix[output_matrix < 0] = 0
   return output_matrix
 
+#6. Sub-amostragem.
+'''
+  6.1. Crie uma função para sub-amostrar (downsampling) os canais Y, Cb, e Cr, segundo as
+  possibilidades definidas pelo codec JPEG, a qual deve devolver Y_d, Cb_d e Cr_d.
+  Utilize, para o efeito, a função cv2.resize (biblioteca Computer Vision), testando
+  diferentes métodos de interpolação (e.g., linear, cúbica, etc.).
+'''
 
-  #6. Sub-amostragem.
-  #6.1. Crie uma função para sub-amostrar (downsampling) os canais Y, Cb, e Cr, segundo as
-  #possibilidades definidas pelo codec JPEG, a qual deve devolver Y_d, Cb_d e Cr_d.
-  '''
-  #Obs: Utilize, para o efeito, a função cv2.resize (biblioteca Computer Vision), testando
-  #diferentes métodos de interpolação (e.g., linear, cúbica, etc.).
-  '''
+def sub_amostragem(Y, Cb, Cr, subsampling_type, interpolation):
+      
+  width, height = Y.shape[1], Y.shape[0]
 
+  # os valores aqui defenidos dividir por metade um quarto é a maneira como o JPEG funciona para os varios tipos de subamostragem
+  if subsampling_type == '4:2:2':
+      
+      # reduzimos para metade a resolução horizontal do Cb e do Cr
+      Y_d = Y
+      Cb_d = cv2.resize(Cb, (width // 2, height), interpolation)
+      Cr_d = cv2.resize(Cr, (width // 2, height), interpolation)
 
-def sub_amostragem(Y, Cb, Cr):
-    #Tipos de subamostragem mais usados no JPEG
-    subsampling_types = ['4:4:4', '4:2:2', '4:2:0', '4:1:1']
-     
-    #percorre a lista de subamostragens
-    for subsampling_type in subsampling_types:
-        
-        
-        width, height = Y.shape[1], Y.shape[0]
+  elif subsampling_type == '4:2:0':
+      
+      # reduzimos para metade a resolução horizontal e vertical do Cb e do Cr
+      Y_d = Y
+      Cb_d = cv2.resize(Cb, (width // 2, height // 2), interpolation)
+      Cr_d = cv2.resize(Cr, (width // 2, height // 2), interpolation)
 
-       # os valores aqui defenidos dividir por metade um quarto é a maneira como o JPEG funciona para os varios tipos de subamostragem
-       #se for do tipo 4:4:4 não é preciso redimensionar
-        if subsampling_type == '4:4:4':
-            Cb_d, Cr_d = Cb, Cr
+  return Y_d, Cb_d, Cr_d
 
-        elif subsampling_type == '4:2:2':
-            # reduzimos para metade a resolução horizontal do Cb e do Cr
-            Cb_d = cv2.resize(Cb, (width // 2, height), interpolation=cv2.INTER_AREA)
-            Cr_d = cv2.resize(Cr, (width // 2, height), interpolation=cv2.INTER_AREA)
+#6.2. Crie também a função para efectuar a operação inversa, i.e., upsampling.
+def upsampling(Y_d,Cb_d,Cr_d,interpolation):
 
-        elif subsampling_type == '4:2:0':
-            # reduzimos para metade a resolução horizontal e vertical do Cb e do Cr
-            Cb_d = cv2.resize(Cb, (width // 2, height // 2), interpolation=cv2.INTER_AREA)
-            Cr_d = cv2.resize(Cr, (width // 2, height // 2), interpolation=cv2.INTER_AREA)
+    Cb_upsampled = cv2.resize(Cb_d, (Y_d.shape[1], Y_d.shape[0]), interpolation)
+    Cr_upsampled = cv2.resize(Cr_d, (Y_d.shape[1], Y_d.shape[0]), interpolation)
 
-        elif subsampling_type == '4:1:1':
-             # reduzimos para um quarto a resolução horizontaldo Cb e do Cr
-            Cb_d = cv2.resize(Cb, (width // 4, height), interpolation=cv2.INTER_AREA)
-            Cr_d = cv2.resize(Cr, (width // 4, height), interpolation=cv2.INTER_AREA)
-
-        # Display the channels 
-        plt.figure(figsize=(12, 4))
-        plt.subplot(1, 3, 1)
-        plt.imshow(Y, cmap='gray')
-        plt.title('Y Channel')
-        plt.subplot(1, 3, 2)
-        plt.imshow(Cb_d, cmap='gray')
-        plt.title(f'Cb Channel\n{subsampling_type}')
-        plt.subplot(1, 3, 3)
-        plt.imshow(Cr_d, cmap='gray')
-        plt.title(f'Cr Channel\n{subsampling_type}')
-        plt.tight_layout()
-        plt.show()
+    return Y_d, Cb_upsampled, Cr_upsampled
 
 
-     
-  
-  
+def DCT(Y, Cb, Cr):
+   
+    Y_dct = scipy.fftpack.dct(Y, type=2, norm=None)
+    Cb_dct = scipy.fftpack.dct(Cb, type=2, norm=None)
+    Cr_dct = scipy.fftpack.dct(Cr, type=2, norm=None)
+    
+ 
+    Y_dct_log = np.log(np.abs(Y_dct) + 0.0001)
+    Cb_dct_log = np.log(np.abs(Cb_dct) + 0.0001)
+    Cr_dct_log = np.log(np.abs(Cr_dct) + 0.0001)
+
+   
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 3, 1)
+    plt.imshow(Y_dct_log, cmap='gray')
+    plt.title('Log DCT of Y')
+    plt.subplot(1, 3, 2)
+    plt.imshow(Cb_dct_log, cmap='gray')
+    plt.title('Log DCT of Cb')
+    plt.subplot(1, 3, 3)
+    plt.imshow(Cr_dct_log, cmap='gray')
+    plt.title('Log DCT of Cr')
+    plt.tight_layout()
+    plt.show()
+
+
 
 def main():
-    # 3.1 Leia uma imagem .bmp, e.g., a imagem peppers.bmp.
-
-
     
-
+    # 3.1 Leia uma imagem .bmp, e.g., a imagem peppers.bmp.
     fname = "airport.bmp"
     img = plt.imread(fname)
     
@@ -232,7 +235,7 @@ def main():
 
     #3.3 Crie uma função que permita visualizar a imagem com um dado colormap.
     showImg(img,fname,"Imagem original: ")
-
+    print("\n#4\n")
     print("Dimensão Original: " + str(img.shape))  # Imprime as dimensões da imagem original
     
     #3.4 Encoder: Crie uma função para separar a imagem nos seus componentes RGB.
@@ -273,26 +276,19 @@ def main():
     #5.3.1 Converta os canais RGB para canais YCbCr (Com paddding)
     y,cb,cr = encoder(padded_img,pad = False,split = False, RGB_to_YCBCR = True)
     
-    #5.3.2 Visualize cada um dos canais (com o colormap adequado) ----------->>>>>Que color map devemos usar???<<<<<------------
+    #5.3.2 Visualize cada um dos canais (com o colormap adequado)
     # Visualizar o canal Y usando mapa de cores em escala de cinza
     showImg(y,fname,'Canal Y (Luminância)','gray')
-    
     
     # Visualizar o canal Cb com mapa de cores apropriado
     showImg(cb,fname,'Canal Cb (Diferença de Azul)','gray')
     
-    
     # Visualizar o canal Cr com mapa de cores apropriado
     showImg(cr,fname,'Canal Cr (Diferença de Vermelho)','gray')
     
-
     #5.4 Decoder: Recupere os canais RGB a partir dos canais YcbCr obtidos. Certifique-se de 
     #que consegue obter os valores originais de RGB (teste, por exemplo, com o pixel de 
     #coordenada [0, 0]).
-
-
-    
-
 
     #juntar os canais y,cb e cr numa imagem codificada
     encoded_ycbcr_img = np.dstack((y, cb, cr))
@@ -300,29 +296,205 @@ def main():
     #recuperar a imagem original
     recovered_img = decoder(R,G,B,encoded_ycbcr_img,padded_img = padded_img, og = (h,w),unpad = False,join = False,YCBCR_to_RGB = True)
 
-
     # Armazenar os valores RGB do pixel [0,0] da imagem após conversão
     recovered_pixel = recovered_img[0, 0]
-
 
     #recuperar os canais RGB 
     R_decoded,G_decoded,B_decoded = splitRGB(recovered_img)
 
     #verificar se os valores RGB do pixel [0,0] são os mesmos depois de todas as transformações
+    print("\n#5\n")
     print(f'Original RGB pixel [0,0]: {original_pixel}')
     print(f'Recovered RGB pixel [0,0]: {recovered_pixel}')
 
-    sub_amostragem(y, cb, cr)
-
+    '''
+    6.1. Crie uma função para sub-amostrar (downsampling) os canais Y, Cb, e Cr, segundo as
+    possibilidades definidas pelo codec JPEG, a qual deve devolver Y_d, Cb_d e Cr_d.
+    Utilize, para o efeito, a função cv2.resize (biblioteca Computer Vision), testando
+    diferentes métodos de interpolação (e.g., linear, cúbica, etc.).
     
+    6.3. Encoder: Obtenha e visualize os canais Y_d, Cb_d e Cr_d com downsampling 4:2:0.
+    Apresente as dimensões das matrizes correspondentes.
 
+    6.4. Decoder: Reconstrua e visualize os canais Y, Cb e Cr. Compare-os com os originais.
+    '''
+
+    print("\n#6\n")
+
+    # 4:2:0 & LINEAR
+    Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False,True, y ,cb ,cr, "4:2:0",cv2.INTER_LINEAR)
+
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 3, 1)
+    plt.imshow(Y_d, cmap='gray')
+    plt.title('Y downsampling 4:2:0 (LINEAR)')
+    plt.subplot(1, 3, 2)
+    plt.imshow(Cb_d, cmap='gray')
+    plt.title(f'Cb downsampling 4:2:0 (LINEAR)')
+    plt.subplot(1, 3, 3)
+    plt.imshow(Cr_d, cmap='gray')
+    plt.title(f'Cr downsampling 4:2:0 (LINEAR)')
+    plt.tight_layout()
+    plt.show()
+
+    print("---[downsampling 4:2:0 (LINEAR)]---\n")
+    print("Dimensões de Y_d:", Y_d.shape)
+    print("Dimensões de Cb_d:", Cb_d.shape)
+    print("Dimensões de Cr_d:", Cr_d.shape)
+
+    Y, Cb, Cr = decoder(None,None,None,None,None,None,False, False, False, True, Y_d , Cb_d , Cr_d, cv2.INTER_LINEAR)
+
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 3, 1)
+    plt.imshow(Y, cmap='gray')
+    plt.title('Y upsampling  4:2:0 (LINEAR)')
+    plt.subplot(1, 3, 2)
+    plt.imshow(Cb, cmap='gray')
+    plt.title(f'Cb upsampling  4:2:0 (LINEAR)')
+    plt.subplot(1, 3, 3)
+    plt.imshow(Cr, cmap='gray')
+    plt.title(f'Cr upsampling  4:2:0 (LINEAR)')
+    plt.tight_layout()
+    plt.show()
+
+    print("\n---[upsampling 4:2:0 (LINEAR)]---\n")
+    print("Dimensões de Y:", Y.shape)
+    print("Dimensões de Cb:", Cb.shape)
+    print("Dimensões de Cr:", Cr.shape)
+
+    # 4:2:0 & CUBIC
+    Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False, True, y ,cb ,cr, "4:2:0",cv2.INTER_CUBIC)
+
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 3, 1)
+    plt.imshow(Y_d, cmap='gray')
+    plt.title('Y downsampling 4:2:0 (CUBIC)')
+    plt.subplot(1, 3, 2)
+    plt.imshow(Cb_d, cmap='gray')
+    plt.title(f'Cb downsampling 4:2:0 (CUBIC)')
+    plt.subplot(1, 3, 3)
+    plt.imshow(Cr_d, cmap='gray')
+    plt.title(f'Cr downsampling 4:2:0 (CUBIC)')
+    plt.tight_layout()
+    plt.show()
+
+    print("\n---[downsampling 4:2:0 (CUBIC)]---\n")
+    print("Dimensões de Y_d:", Y_d.shape)
+    print("Dimensões de Cb_d:", Cb_d.shape)
+    print("Dimensões de Cr_d:", Cr_d.shape)
+
+    Y, Cb, Cr = decoder(None,None,None,None,None,None,False, False, False, True, Y_d , Cb_d , Cr_d, cv2.INTER_CUBIC)
+
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 3, 1)
+    plt.imshow(Y, cmap='gray')
+    plt.title('Y upsampling  4:2:0 (CUBIC)')
+    plt.subplot(1, 3, 2)
+    plt.imshow(Cb, cmap='gray')
+    plt.title(f'Cb upsampling  4:2:0 (CUBIC)')
+    plt.subplot(1, 3, 3)
+    plt.imshow(Cr, cmap='gray')
+    plt.title(f'Cr upsampling  4:2:0 (CUBIC)')
+    plt.tight_layout()
+    plt.show()
+    
+    print("\n---[upsampling 4:2:0 (CUBIC)]---\n")
+    print("Dimensões de Y:", Y.shape)
+    print("Dimensões de Cb:", Cb.shape)
+    print("Dimensões de Cr:", Cr.shape)
+    
+    # 4:2:2 & LINEAR
+    Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False, True, y ,cb ,cr, "4:2:2",cv2.INTER_LINEAR)
+
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 3, 1)
+    plt.imshow(Y_d, cmap='gray')
+    plt.title('Y downsampling 4:2:2 (LINEAR)')
+    plt.subplot(1, 3, 2)
+    plt.imshow(Cb_d, cmap='gray')
+    plt.title(f'Cb downsampling 4:2:2 (LINEAR)')
+    plt.subplot(1, 3, 3)
+    plt.imshow(Cr_d, cmap='gray')
+    plt.title(f'Cr downsampling 4:2:2 (LINEAR)')
+    plt.tight_layout()
+    plt.show()
+
+    print("\n---[downsampling 4:2:2 (LINEAR)]---\n")
+    print("Dimensões de Y_d:", Y_d.shape)
+    print("Dimensões de Cb_d:", Cb_d.shape)
+    print("Dimensões de Cr_d:", Cr_d.shape)
+
+    Y, Cb, Cr = decoder(None,None,None,None,None,None,False, False, False, True, Y_d , Cb_d , Cr_d, cv2.INTER_LINEAR)
+
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 3, 1)
+    plt.imshow(Y, cmap='gray')
+    plt.title('Y upsampling  4:2:2 (LINEAR)')
+    plt.subplot(1, 3, 2)
+    plt.imshow(Cb, cmap='gray')
+    plt.title(f'Cb upsampling  4:2:2 (LINEAR)')
+    plt.subplot(1, 3, 3)
+    plt.imshow(Cr, cmap='gray')
+    plt.title(f'Cr upsampling  4:2:2 (LINEAR)')
+    plt.tight_layout()
+    plt.show()
+    
+    print("\n---[upsampling 4:2:2 (LINEAR)]---\n")
+    print("Dimensões de Y:", Y.shape)
+    print("Dimensões de Cb:", Cb.shape)
+    print("Dimensões de Cr:", Cr.shape)
+
+    # 4:2:2 & CUBIC
+    Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False, True, y ,cb ,cr, "4:2:2",cv2.INTER_CUBIC)
+
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 3, 1)
+    plt.imshow(Y_d, cmap='gray')
+    plt.title('Y downsampling 4:2:2 (CUBIC)')
+    plt.subplot(1, 3, 2)
+    plt.imshow(Cb_d, cmap='gray')
+    plt.title(f'Cb downsampling 4:2:2 (CUBIC)')
+    plt.subplot(1, 3, 3)
+    plt.imshow(Cr_d, cmap='gray')
+    plt.title(f'Cr downsampling 4:2:2 (CUBIC)')
+    plt.tight_layout()
+    plt.show()
+
+    print("\n---[downsampling 4:2:2 (CUBIC)]---\n")
+    print("Dimensões de Y_d:", Y_d.shape)
+    print("Dimensões de Cb_d:", Cb_d.shape)
+    print("Dimensões de Cr_d:", Cr_d.shape)
+
+    Y, Cb, Cr = decoder(None,None,None,None,None,None,False, False, False, True, Y_d , Cb_d , Cr_d, cv2.INTER_CUBIC)
+
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 3, 1)
+    plt.imshow(Y, cmap='gray')
+    plt.title('Y upsampling  4:2:2 (CUBIC)')
+    plt.subplot(1, 3, 2)
+    plt.imshow(Cb, cmap='gray')
+    plt.title(f'Cb upsampling  4:2:2 (CUBIC)')
+    plt.subplot(1, 3, 3)
+    plt.imshow(Cr, cmap='gray')
+    plt.title(f'Cr upsampling  4:2:2 (CUBIC)')
+    plt.tight_layout()
+    plt.show()
+    
+    print("\n---[upsampling 4:2:2 (CUBIC)]---\n")
+    print("Dimensões de Y:", Y.shape)
+    print("Dimensões de Cb:", Cb.shape)
+    print("Dimensões de Cr:", Cr.shape)
+
+    DCT(Y,Cb,Cr)
 
     return
 
 
 """
 Ponto de situação:
--->rushar ex 6 e 7
+-->rushar ex  7
+-->Perguntar ao professor as diferenças entre a interpolação e se os resultados visuais fazem sentido (Nós não notamos bem)
+    
 """
 
 if __name__ == "__main__":
