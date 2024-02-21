@@ -344,7 +344,7 @@ def main():
 
     # 4:2:0 & LINEAR
     Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False,True, y ,cb ,cr, "4:2:0",cv2.INTER_LINEAR)
-
+    DCT(Y_d,Cb_d,Cr_d)
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 3, 1)
     plt.imshow(Y_d, cmap='gray')
@@ -385,7 +385,7 @@ def main():
 
     # 4:2:0 & CUBIC
     Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False, True, y ,cb ,cr, "4:2:0",cv2.INTER_CUBIC)
-
+    DCT(Y_d,Cb_d,Cr_d)
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 3, 1)
     plt.imshow(Y_d, cmap='gray')
@@ -405,7 +405,7 @@ def main():
     print("Dimensões de Cr_d:", Cr_d.shape)
 
     Y, Cb, Cr = decoder(None,None,None,None,None,None,False, False, False, True, Y_d , Cb_d , Cr_d, cv2.INTER_CUBIC)
-
+    DCT(Y_d,Cb_d,Cr_d)
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 3, 1)
     plt.imshow(Y, cmap='gray')
@@ -426,7 +426,7 @@ def main():
     
     # 4:2:2 & LINEAR
     Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False, True, y ,cb ,cr, "4:2:2",cv2.INTER_LINEAR)
-
+    DCT(Y_d,Cb_d,Cr_d)
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 3, 1)
     plt.imshow(Y_d, cmap='gray')
@@ -467,7 +467,7 @@ def main():
 
     # 4:2:2 & CUBIC
     Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False, True, y ,cb ,cr, "4:2:2",cv2.INTER_CUBIC)
-
+    DCT(Y_d,Cb_d,Cr_d)
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 3, 1)
     plt.imshow(Y_d, cmap='gray')
@@ -505,8 +505,8 @@ def main():
     print("Dimensões de Y:", Y.shape)
     print("Dimensões de Cb:", Cb.shape)
     print("Dimensões de Cr:", Cr.shape)
-
-    DCT(Y,Cb,Cr)
+  
+    
 
     return
 
