@@ -236,6 +236,79 @@ def DCT(Y, Cb, Cr):
     plt.show()
 
 
+def DCTBlocks(Y, Cb, Cr,step):
+    # Applying DCT
+
+
+   
+  out_Y = np.zeros(Y.shape)
+  for i in range(0, Y.shape[0], step):
+    for j in range(0, Y.shape[1], step):
+      out_Y[i:i + step, j:j + step] = dct(Y[i:i + step, j:j + step])
+
+  out_Cb = np.zeros(Cb.shape)
+  for i in range(0, Cb.shape[0], step):
+    for j in range(0, Cb.shape[1], step):
+      out_Cb[i:i + step, j:j + step] = dct(Cb[i:i + step, j:j + step])
+  
+  out_Cr = np.zeros(Cr.shape)
+  for i in range(0, Cr.shape[0], step):
+    for j in range(0, Cr.shape[1], step):
+      out_Cr[i:i + step, j:j + step] = dct(Cr[i:i + step, j:j + step])
+
+  
+  
+  # Log transformation for better visualization
+  Y_dct_log = np.log(np.abs(out_Y) + 0.0001)
+  Cb_dct_log = np.log(np.abs(out_Cb) + 0.0001)
+  Cr_dct_log = np.log(np.abs(out_Cr) + 0.0001)
+
+  # Displaying DCT images
+  plt.figure(figsize=(12, 4))
+  plt.subplot(1, 3, 1)
+  plt.imshow(Y_dct_log, cmap='gray')
+  plt.title('Log DCT of Y')
+  plt.subplot(1, 3, 2)
+  plt.imshow(Cb_dct_log, cmap='gray')
+  plt.title('Log DCT of Cb')
+  plt.subplot(1, 3, 3)
+  plt.imshow(Cr_dct_log, cmap='gray')
+  plt.title('Log DCT of Cr')
+  plt.tight_layout()
+  plt.show()
+
+    # Applying IDCT
+  idctOut_Y = np.zeros(out_Y.shape)
+  for i in range(0, out_Y.shape[0], step):
+    for j in range(0, Y.shape[1], step):
+      idctOut_Y[i:i + step, j:j + step] = idct(out_Y[i:i + step, j:j + step])
+
+  idctOut_Cb = np.zeros(out_Cb.shape)
+  for i in range(0, out_Cb.shape[0], step):
+    for j in range(0, out_Cb.shape[1], step):
+      idctOut_Cb[i:i + step, j:j + step] = idct(out_Cb[i:i + step, j:j + step])
+
+  idctOut_Cr = np.zeros(out_Cr.shape)
+  for i in range(0, out_Cr.shape[0], step):
+    for j in range(0, out_Cr.shape[1], step):
+      idctOut_Cr[i:i + step, j:j + step] = idct(out_Cr[i:i + step, j:j + step])
+
+  # Displaying inverse DCT images
+  plt.figure(figsize=(12, 4))
+  plt.subplot(1, 3, 1)
+  plt.imshow(idctOut_Y, cmap='gray')
+  plt.title('Inverse DCT of Y')
+  plt.subplot(1, 3, 2)
+  plt.imshow(idctOut_Cb, cmap='gray')
+  plt.title('Inverse DCT of Cb')
+  plt.subplot(1, 3, 3)
+  plt.imshow(idctOut_Cr, cmap='gray')
+  plt.title('Inverse DCT of Cr')
+  plt.tight_layout()
+  plt.show()
+
+
+
 
 
 
@@ -344,7 +417,7 @@ def main():
 
     # 4:2:0 & LINEAR
     Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False,True, y ,cb ,cr, "4:2:0",cv2.INTER_LINEAR)
-    DCT(Y_d,Cb_d,Cr_d)
+    """
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 3, 1)
     plt.imshow(Y_d, cmap='gray')
@@ -385,7 +458,7 @@ def main():
 
     # 4:2:0 & CUBIC
     Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False, True, y ,cb ,cr, "4:2:0",cv2.INTER_CUBIC)
-    DCT(Y_d,Cb_d,Cr_d)
+   
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 3, 1)
     plt.imshow(Y_d, cmap='gray')
@@ -426,7 +499,7 @@ def main():
     
     # 4:2:2 & LINEAR
     Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False, True, y ,cb ,cr, "4:2:2",cv2.INTER_LINEAR)
-    DCT(Y_d,Cb_d,Cr_d)
+    
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 3, 1)
     plt.imshow(Y_d, cmap='gray')
@@ -467,7 +540,7 @@ def main():
 
     # 4:2:2 & CUBIC
     Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False, True, y ,cb ,cr, "4:2:2",cv2.INTER_CUBIC)
-    DCT(Y_d,Cb_d,Cr_d)
+   
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 3, 1)
     plt.imshow(Y_d, cmap='gray')
@@ -504,8 +577,14 @@ def main():
     print("\n---[upsampling 4:2:2 (CUBIC)]---\n")
     print("Dimensões de Y:", Y.shape)
     print("Dimensões de Cb:", Cb.shape)
-    print("Dimensões de Cr:", Cr.shape)
+    print("Dimensões de Cr:", Cr.shape)"""
   
+
+    DCT(y,cb,cr)
+    #DCTBlocks(Y_d, Cb_d, Cr_d,8)
+    print("############################")
+    print(img.shape)
+    DCTBlocks(y, cb, cr,64)
     
 
     return
