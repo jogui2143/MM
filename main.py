@@ -7,7 +7,7 @@ import cv2
 
 
 #2: criar o encoder e decoder
-def encoder(img, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y=None, Cb=None, Cr=None, subsampling_type=None, interpolation=None):
+def encoder(img = None, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y=None, Cb=None, Cr=None, subsampling_type=None, interpolation=None,dct = False,dctBlocks=False,step=None):
 
   if split:
     R, G, B = splitRGB(img)
@@ -21,9 +21,15 @@ def encoder(img, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y=None, 
 
   elif sub:
     return sub_amostragem(Y, Cb, Cr, subsampling_type, interpolation)
+  
+  elif dct:
+     return DCT(Y,Cb,Cr)
+  
+  elif dctBlocks:
+     return DCTBlocks(Y,Cb,Cr,step)
      
  
-def decoder(R=None,G=None,B=None,img_ycbcr = None,padded_img = None, og = None, unpad = False,join = False,YCBCR_to_RGB = False, up = False, Y_d = None, Cb_d = None, Cr_d = None, interpolation = None):
+def decoder(R=None,G=None,B=None,img_ycbcr = None,padded_img = None, og = None, unpad = False,join = False,YCBCR_to_RGB = False, up = False, Y_d = None, Cb_d = None, Cr_d = None, interpolation = None,Invert_DCT = False,invert_dct_Blocks=False,step=None):
 
   if join:
      imgRec = joinRGB(R, G, B)
@@ -37,6 +43,12 @@ def decoder(R=None,G=None,B=None,img_ycbcr = None,padded_img = None, og = None, 
   
   elif up:
     return upsampling(Y_d,Cb_d,Cr_d,interpolation)
+  
+  elif Invert_DCT:
+     return invertDCT(Y_d,Cb_d,Cr_d)
+  
+  elif invert_dct_Blocks:
+     return invertDCTBlocks(Y_d,Cb_d,Cr_d,step)
   
 
 
@@ -190,7 +202,16 @@ def upsampling(Y_d,Cb_d,Cr_d,interpolation):
 
     return Y_d, Cb_upsampled, Cr_upsampled
 
+#7. Transformada de Coseno Discreta (DCT).
 
+#7.1.1. Crie uma função para calcular a DCT de um canal completo. Utilize a função scipy.fftpack.dct.
+'''
+7.1.3. Encoder: Aplique a função desenvolvida em 7.1.1 a Y_d, Cb_d, Cr_d e visualize as
+imagens obtidas (Y_dct, Cb_dct, Cr_dct). Sugestão: atendendo à gama ampla de
+valores da DCT, visualize as imagens usando uma transformação logarítmica (apta
+para compressão de gama), de acordo com o seguinte pseudo-código:
+imshow(log(abs(X) + 0.0001))
+'''
 def DCT(Y, Cb, Cr):
     # Applying DCT
     Y_dct = dct(dct(Y, norm='ortho').T, norm='ortho').T
@@ -219,8 +240,15 @@ def DCT(Y, Cb, Cr):
 
     return Y_dct,Cb_dct,Cr_dct
 
-
-
+'''
+7.1.2. Crie também a função inversa (usando scipy.fftpack.idct).
+Nota: para uma matriz, X, com duas dimensões, deverá fazer:
+X_dct = dct(dct(X, norm=”ortho”).T, norm=”ortho”).T
+'''
+'''
+7.1.4. Decoder: Aplique a função inversa (7.1.2) e certifique-se de que consegue obter
+os valores originais de Y_d, Cb_d e Cr_d. 
+'''
 def invertDCT(Y_dct, Cb_dct, Cr_dct):  
     # Applying IDCT
     Y_inv_dct = idct(idct(Y_dct, norm='ortho').T, norm='ortho').T
@@ -245,11 +273,15 @@ def invertDCT(Y_dct, Cb_dct, Cr_dct):
     return Y_inv_dct,Cb_inv_dct,Cr_inv_dct
 
 
+#7.2. DCT em blocos 8x8
+
+'''
+7.2.1. Usando as mesmas funções para cálculo da DCT, crie uma função que calcule a
+DCT de um canal completo em blocos BSxBS. 
+'''
 def DCTBlocks(Y, Cb, Cr,step):
-    # Applying DCT
+  # Applying DCT
 
-
-   
   out_Y = np.zeros(Y.shape)
   for i in range(0, Y.shape[0], step):
     for j in range(0, Y.shape[1], step):
@@ -288,6 +320,7 @@ def DCTBlocks(Y, Cb, Cr,step):
 
   return out_Y,out_Cb,out_Cr
 
+#7.2.2. Crie também a função inversa (IDCT BSxBS). 
 def invertDCTBlocks(Y, Cb, Cr,step):
     # Applying IDCT
   idctOut_Y = np.zeros(Y.shape)
@@ -594,13 +627,47 @@ def main():
     print("Dimensões de Cb:", Cb.shape)
     print("Dimensões de Cr:", Cr.shape)
   
+    #7. Transformada de Coseno Discreta (DCT).
+    
+      #7.1. DCT nos canais completos
 
-    Y_d, Cb_d, Cr_d=DCT(Y_d, Cb_d, Cr_d)
-    Y_d, Cb_d, Cr_d=invertDCT(Y_d, Cb_d, Cr_d)
-    Y_d, Cb_d, Cr_d=DCTBlocks(Y_d, Cb_d, Cr_d,8)
-    Y_d, Cb_d, Cr_d=invertDCTBlocks(Y_d, Cb_d, Cr_d,8)
-    Y, Cb, Cr=DCTBlocks(Y, Cb, Cr,64)
-    y, Cb, Cr=invertDCTBlocks(Y, Cb, Cr,64)
+    #7.1.1. Crie uma função para calcular a DCT de um canal completo. Utilize a função scipy.fftpack.dct. 
+    '''
+    7.1.3. Encoder: Aplique a função desenvolvida em 7.1.1 a Y_d, Cb_d, Cr_d e visualize as
+    imagens obtidas (Y_dct, Cb_dct, Cr_dct). Sugestão: atendendo à gama ampla de
+    valores da DCT, visualize as imagens usando uma transformação logarítmica (apta
+    para compressão de gama), de acordo com o seguinte pseudo-código:
+    imshow(log(abs(X) + 0.0001))
+    '''
+
+
+    Y_d_dct, Cb_d_dct, Cr_d_dct = encoder(None,False,False,False,False,Y_d,Cb_d,Cr_d,None,None,True)
+
+    '''
+    7.1.2. Crie também a função inversa (usando scipy.fftpack.idct).
+    Nota: para uma matriz, X, com duas dimensões, deverá fazer:
+    X_dct = dct(dct(X, norm=”ortho”).T, norm=”ortho”).T
+    '''
+    #7.1.4. Decoder: Aplique a função inversa (7.1.2) e certifique-se de que consegue obter os valores originais de Y_d, Cb_d e Cr_d. 
+    Y_d, Cb_d, Cr_d= decoder(None,None,None,None,None,None,False,False,False,False, Y_d_dct,Cb_d_dct,Cr_d_dct,None,True)
+
+
+    """
+    7.2.1. Usando as mesmas funções para cálculo da DCT, crie uma função que calcule a
+        DCT de um canal completo em blocos BSxBS.
+    7.2.2. Crie também a função inversa (IDCT BSxBS).
+    7.2.3. Encoder: Aplique a função desenvolvida (7.2.1) a Y_d, Cb_d, Cr_d com blocos 8x8
+        e visualize as imagens obtidas (Y_dct8, Cb_dct8, Cr_dct8).
+    7.2.4. Decoder: Aplique a função inversa (7.2.2) e certifique-se de que consegue obter
+        os valores originais de Y_d, Cb_d e Cr_d.
+    """
+
+    Y_dct8, Cb_dct8, Cr_dct8=encoder(None,False,False,False,False,Y_d,Cb_d,Cr_d,None,None,False,True,8)
+    Y_d, Cb_d, Cr_d=decoder(None,None,None,None,None,None,False,False,False,False, Y_dct8, Cb_dct8, Cr_dct8,None,False,True,8)
+
+    #7.3. DCT em blocos 64x64.
+    Y_dct64, Cb_dct64, Cr_dct64=encoder(None,False,False,False,False,Y_d,Cb_d,Cr_d,None,None,False,True,64)
+    Y_d, Cb_d, Cr_d=decoder(None,None,None,None,None,None,False,False,False,False, Y_dct64, Cb_dct64, Cr_dct64,None,False,True,64)
     
 
     return
