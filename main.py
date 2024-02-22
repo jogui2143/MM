@@ -626,6 +626,8 @@ def main():
     print("Dimensões de Y:", Y.shape)
     print("Dimensões de Cb:", Cb.shape)
     print("Dimensões de Cr:", Cr.shape)
+
+    print("\n#7\n")
   
     #7. Transformada de Coseno Discreta (DCT).
     
@@ -640,7 +642,6 @@ def main():
     imshow(log(abs(X) + 0.0001))
     '''
 
-
     Y_d_dct, Cb_d_dct, Cr_d_dct = encoder(None,False,False,False,False,Y_d,Cb_d,Cr_d,None,None,True)
 
     '''
@@ -651,6 +652,10 @@ def main():
     #7.1.4. Decoder: Aplique a função inversa (7.1.2) e certifique-se de que consegue obter os valores originais de Y_d, Cb_d e Cr_d. 
     Y_d, Cb_d, Cr_d= decoder(None,None,None,None,None,None,False,False,False,False, Y_d_dct,Cb_d_dct,Cr_d_dct,None,True)
 
+    print("Valores originais Y_d Cb_d Cr_d, pós DCT:")
+    print("Dimensões de Y_d",Y_d.shape)
+    print("Dimensões de Cb_d",Cb_d.shape)
+    print("Dimensões de Cr_d",Cr_d.shape)
 
     """
     7.2.1. Usando as mesmas funções para cálculo da DCT, crie uma função que calcule a
@@ -665,20 +670,22 @@ def main():
     Y_dct8, Cb_dct8, Cr_dct8=encoder(None,False,False,False,False,Y_d,Cb_d,Cr_d,None,None,False,True,8)
     Y_d, Cb_d, Cr_d=decoder(None,None,None,None,None,None,False,False,False,False, Y_dct8, Cb_dct8, Cr_dct8,None,False,True,8)
 
+    print("\nValores originais Y_d Cb_d Cr_d, pós DCT com blocos 8x8:")
+    print("Dimensões de Y_d",Y_d.shape)
+    print("Dimensões de Cb_d",Cb_d.shape)
+    print("Dimensões de Cr_d",Cr_d.shape)
+
     #7.3. DCT em blocos 64x64.
     Y_dct64, Cb_dct64, Cr_dct64=encoder(None,False,False,False,False,Y_d,Cb_d,Cr_d,None,None,False,True,64)
     Y_d, Cb_d, Cr_d=decoder(None,None,None,None,None,None,False,False,False,False, Y_dct64, Cb_dct64, Cr_dct64,None,False,True,64)
+
+    print("\nValores originais Y_d Cb_d Cr_d, pós DCT com blocos 64x64:")
+    print("Dimensões de Y_d",Y_d.shape)
+    print("Dimensões de Cb_d",Cb_d.shape)
+    print("Dimensões de Cr_d",Cr_d.shape)
     
 
     return
-
-
-"""
-Ponto de situação:
--->rushar ex  7
--->Perguntar ao professor as diferenças entre a interpolação e se os resultados visuais fazem sentido (Nós não notamos bem)
-    
-"""
 
 if __name__ == "__main__":
     main()
