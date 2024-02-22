@@ -595,12 +595,12 @@ def main():
     print("Dimensões de Cr:", Cr.shape)
   
 
-    y,cb,cr=DCT(y,cb,cr)
-    y,cb,cr=invertDCT(y,cb,cr)
-    y,cb,cr=DCTBlocks(y, cb, cr,8)
-    y,cb,cr=invertDCTBlocks(y, cb, cr,8)
-    y,cb,cr=DCTBlocks(y, cb, cr,64)
-    y,cb,cr=invertDCTBlocks(y, cb, cr,64)
+    Y_d, Cb_d, Cr_d=DCT(Y_d, Cb_d, Cr_d)
+    Y_d, Cb_d, Cr_d=invertDCT(Y_d, Cb_d, Cr_d)
+    Y_d, Cb_d, Cr_d=DCTBlocks(Y_d, Cb_d, Cr_d,8)
+    Y_d, Cb_d, Cr_d=invertDCTBlocks(Y_d, Cb_d, Cr_d,8)
+    Y, Cb, Cr=DCTBlocks(Y, Cb, Cr,64)
+    y, Cb, Cr=invertDCTBlocks(Y, Cb, Cr,64)
     
 
     return
