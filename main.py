@@ -417,7 +417,7 @@ def main():
 
     # 4:2:0 & LINEAR
     Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False,True, y ,cb ,cr, "4:2:0",cv2.INTER_LINEAR)
-    """
+  
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 3, 1)
     plt.imshow(Y_d, cmap='gray')
@@ -577,13 +577,12 @@ def main():
     print("\n---[upsampling 4:2:2 (CUBIC)]---\n")
     print("Dimensões de Y:", Y.shape)
     print("Dimensões de Cb:", Cb.shape)
-    print("Dimensões de Cr:", Cr.shape)"""
+    print("Dimensões de Cr:", Cr.shape)
   
 
     DCT(y,cb,cr)
-    #DCTBlocks(Y_d, Cb_d, Cr_d,8)
-    print("############################")
-    print(img.shape)
+    
+    DCTBlocks(y, cb, cr,8)
     DCTBlocks(y, cb, cr,64)
     
 
