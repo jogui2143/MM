@@ -216,6 +216,12 @@ def DCT(Y, Cb, Cr):
     plt.tight_layout()
     plt.show()
 
+
+    return Y_dct,Cb_dct,Cr_dct
+
+
+
+def invertDCT(Y_dct, Cb_dct, Cr_dct):  
     # Applying IDCT
     Y_inv_dct = idct(idct(Y_dct, norm='ortho').T, norm='ortho').T
     Cb_inv_dct = idct(idct(Cb_dct, norm='ortho').T, norm='ortho').T
@@ -234,6 +240,9 @@ def DCT(Y, Cb, Cr):
     plt.title('Inverse DCT of Cr')
     plt.tight_layout()
     plt.show()
+
+
+    return Y_inv_dct,Cb_inv_dct,Cr_inv_dct
 
 
 def DCTBlocks(Y, Cb, Cr,step):
@@ -277,23 +286,26 @@ def DCTBlocks(Y, Cb, Cr,step):
   plt.tight_layout()
   plt.show()
 
+  return out_Y,out_Cb,out_Cr
+
+def invertDCTBlocks(Y, Cb, Cr,step):
     # Applying IDCT
-  idctOut_Y = np.zeros(out_Y.shape)
-  for i in range(0, out_Y.shape[0], step):
+  idctOut_Y = np.zeros(Y.shape)
+  for i in range(0, Y.shape[0], step):
     for j in range(0, Y.shape[1], step):
-      idctOut_Y[i:i + step, j:j + step] = idct(out_Y[i:i + step, j:j + step])
+      idctOut_Y[i:i + step, j:j + step] = idct(Y[i:i + step, j:j + step])
 
-  idctOut_Cb = np.zeros(out_Cb.shape)
-  for i in range(0, out_Cb.shape[0], step):
-    for j in range(0, out_Cb.shape[1], step):
-      idctOut_Cb[i:i + step, j:j + step] = idct(out_Cb[i:i + step, j:j + step])
+  idctOut_Cb = np.zeros(Cb.shape)
+  for i in range(0, Cb.shape[0], step):
+    for j in range(0, Cb.shape[1], step):
+      idctOut_Cb[i:i + step, j:j + step] = idct(Cb[i:i + step, j:j + step])
 
-  idctOut_Cr = np.zeros(out_Cr.shape)
-  for i in range(0, out_Cr.shape[0], step):
-    for j in range(0, out_Cr.shape[1], step):
-      idctOut_Cr[i:i + step, j:j + step] = idct(out_Cr[i:i + step, j:j + step])
+  idctOut_Cr = np.zeros(Cr.shape)
+  for i in range(0, Cr.shape[0], step):
+    for j in range(0, Cr.shape[1], step):
+      idctOut_Cr[i:i + step, j:j + step] = idct(Cr[i:i + step, j:j + step])
 
-  # Displaying inverse DCT images
+    # Displaying inverse DCT images
   plt.figure(figsize=(12, 4))
   plt.subplot(1, 3, 1)
   plt.imshow(idctOut_Y, cmap='gray')
@@ -306,6 +318,9 @@ def DCTBlocks(Y, Cb, Cr,step):
   plt.title('Inverse DCT of Cr')
   plt.tight_layout()
   plt.show()
+
+
+  return idctOut_Y,idctOut_Cb,idctOut_Cr
 
 
 
@@ -478,7 +493,7 @@ def main():
     print("Dimensões de Cr_d:", Cr_d.shape)
 
     Y, Cb, Cr = decoder(None,None,None,None,None,None,False, False, False, True, Y_d , Cb_d , Cr_d, cv2.INTER_CUBIC)
-    DCT(Y_d,Cb_d,Cr_d)
+    
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 3, 1)
     plt.imshow(Y, cmap='gray')
@@ -580,10 +595,12 @@ def main():
     print("Dimensões de Cr:", Cr.shape)
   
 
-    DCT(y,cb,cr)
-    
-    DCTBlocks(y, cb, cr,8)
-    DCTBlocks(y, cb, cr,64)
+    y,cb,cr=DCT(y,cb,cr)
+    y,cb,cr=invertDCT(y,cb,cr)
+    y,cb,cr=DCTBlocks(y, cb, cr,8)
+    y,cb,cr=invertDCTBlocks(y, cb, cr,8)
+    y,cb,cr=DCTBlocks(y, cb, cr,64)
+    y,cb,cr=invertDCTBlocks(y, cb, cr,64)
     
 
     return
