@@ -7,7 +7,7 @@ import cv2
 
 
 #2: criar o encoder e decoder
-def encoder(img = None, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y=None, Cb=None, Cr=None, subsampling_type=None, interpolation=None,dct = False,dctBlocks=False,step=None):
+def encoder(img = None, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y=None, Cb=None, Cr=None, subsampling_type=None, interpolation=None,dct = False,dctBlocks=False,step=None,quant = False,quant_matrix = None):
 
   if split:
     R, G, B = splitRGB(img)
@@ -27,6 +27,10 @@ def encoder(img = None, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y
   
   elif dctBlocks:
      return DCTBlocks(Y,Cb,Cr,step)
+  
+  elif quant:
+    blocks = DCTBlocks(Y,Cb,Cr,step)
+    return quantize_block(blocks,quant_matrix)
      
  
 def decoder(R=None,G=None,B=None,img_ycbcr = None,padded_img = None, og = None, unpad = False,join = False,YCBCR_to_RGB = False, up = False, Y_d = None, Cb_d = None, Cr_d = None, interpolation = None,Invert_DCT = False,invert_dct_Blocks=False,step=None):
@@ -354,6 +358,24 @@ def invertDCTBlocks(Y, Cb, Cr,step):
 
 
   return idctOut_Y,idctOut_Cb,idctOut_Cr
+
+def quantize_block(dct_block, quant_matrix):
+    """
+    Aplica a quantização a um bloco DCT 8x8 usando a matriz de quantização fornecida.
+
+    
+    """
+    quantized_block = np.round(dct_block / quant_matrix)
+    return quantized_block
+
+def dequantize_block(quantized_block, quant_matrix): #AINDA ESTÁ MAL, TENHO DE FAZER UNS TRUQUES POR CAUSA DE ARREDONDAMENTOS
+  """
+  Aplica a dequantização a um bloco quantizado 8x8 para reconstruir os coeficientes da DCT.
+
+  
+  """
+  dequantized_block = quantized_block * quant_matrix
+  return dequantized_block
 
 
 
