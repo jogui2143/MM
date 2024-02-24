@@ -4,8 +4,7 @@ import numpy as np
 from scipy.fftpack import dct, idct
 import cv2
 
-#2: criar o encoder e decoder
-def encoder(img = None, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y=None, Cb=None, Cr=None, subsampling_type=None, interpolation=None,dct = False,dctBlocks=False,step=None):
+def encoder(img = None, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y=None, Cb=None, Cr=None, subsampling_type=None, interpolation=None,dct = False,dctBlocks=False,step=None,quant = False,fq = None,quant_matrix_Y = None,quant_matrix_CbCr = None):
 
   if split:
     R, G, B = splitRGB(img)
@@ -25,6 +24,10 @@ def encoder(img = None, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y
   
   elif dctBlocks:
      return DCT_Blocks(Y,Cb,Cr,step)
+  
+  elif quant:
+    Qs_Cro, Qs_Lum = adj_quant_matrix(fq,quant_matrix_Y,quant_matrix_CbCr)
+    return quantized_dct(Y, Cb, Cr,Qs_Cro,Qs_Lum,step,fq)
      
  
 def decoder(R=None,G=None,B=None,img_ycbcr = None,padded_img = None, og = None, unpad = False,join = False,YCBCR_to_RGB = False, up = False, Y_d = None, Cb_d = None, Cr_d = None, interpolation = None,Invert_DCT = False,invert_dct_Blocks=False,step=None):
@@ -276,7 +279,7 @@ def invertDCT(Y_dct, Cb_dct, Cr_dct):
 7.2.1. Usando as mesmas funções para cálculo da DCT, crie uma função que calcule a
 DCT de um canal completo em blocos BSxBS. 
 '''
-def DCT_Blocks_Channel(canal, tamanho_bloco=8):
+def DCT_Blocks_Channel(canal, tamanho_bloco=8,Quant = False):
     altura, largura = canal.shape
     canal_dct = np.zeros_like(canal, dtype=float)
     
@@ -356,6 +359,131 @@ def invertDCTBlocks(Y, Cb, Cr,step):
   plt.show()
 
   return idctOut_Y,idctOut_Cb,idctOut_Cr
+
+#8. Quantização.
+
+  #8.1. Crie uma função para quantizar os coeficientes da DCT para cada bloco 8x8
+
+  '''
+  8.3. Encoder: Quantize os coeficientes da DCT, usando os seguintes factores de qualidade:
+  10, 25, 50, 75 e 100. Visualize as imagens obtidas (Y_q, CB_q e Cr_q).
+  '''
+
+def adj_quant_matrix(fator_qualidade,Lum_quant_matrix_std,Cro_quant_matrix_std):
+   
+  if fator_qualidade >= 50:
+     sf = (100 - fator_qualidade) / 50
+  
+  elif fator_qualidade < 50:
+     sf = 50/fator_qualidade
+
+  if sf!=0:
+     
+     Qs_Lum = [[round(x * sf) for x in sublist] for sublist in Lum_quant_matrix_std]
+
+     Qs_Lum = np.array(Qs_Lum)
+     
+     Qs_Cro = [[round(x * sf) for x in sublist] for sublist in Cro_quant_matrix_std]
+
+     Qs_Cro = np.array(Qs_Cro)
+     
+
+  elif sf == 0:
+
+    Lum_quant_matrix_std = np.array(Lum_quant_matrix_std)
+    Cro_quant_matrix_std = np.array(Cro_quant_matrix_std)
+
+    lines_Lum ,cols_Lum = Lum_quant_matrix_std.shape
+    lines_Cro ,cols_Cro = Cro_quant_matrix_std.shape
+
+    Qs_Lum = np.ones((lines_Lum,cols_Lum))
+    Qs_Cro = np.ones((lines_Cro,cols_Cro))
+
+  lines_Lum ,cols_Lum = Qs_Lum.shape
+  lines_Cro ,cols_Cro = Qs_Cro.shape
+  
+  for i in range(0,lines_Lum):
+     for j in range(0,cols_Lum):
+        
+        if Qs_Lum[i,j] > 255:
+           Qs_Lum[i,j] = 255
+        
+        elif Qs_Lum[i,j] < 1:
+           Qs_Lum[i,j] = 1
+  
+  for i in range(0,lines_Cro):
+     for j in range(0,cols_Cro):
+        
+        if Qs_Cro[i,j] > 255:
+           Qs_Cro[i,j] = 255
+        
+        elif Qs_Cro[i,j] < 1:
+           Qs_Cro[i,j] = 1
+
+  return Qs_Cro, Qs_Lum
+     
+
+def quantize_block(dct_block, quant_matrix):
+    
+    quantized_block = np.round(dct_block / quant_matrix)
+
+    return quantized_block
+
+def quantized_dct(Y_dct, Cb_dct, Cr_dct,quant_matrix_Y,quant_matrix_CbCr,step,fq):
+   
+  lines_Y, cols_Y = Y_dct.shape
+  lines_Cb, cols_Cb = Cb_dct.shape
+  lines_Cr, cols_Cr = Cr_dct.shape
+
+  for i in range(0,lines_Y,step):
+    for j in range(0,cols_Y,step):
+        dct_block = Y_dct[i:i+step, j:j+step]
+        dct_block_quant = quantize_block(dct_block,quant_matrix_Y)
+        Y_dct[i:i+step, j:j+step] = dct_block_quant
+
+  for i in range(0,lines_Cb,step):
+    for j in range(0,cols_Cb,step):
+        dct_block = Cb_dct[i:i+step, j:j+step]
+        dct_block_quant = quantize_block(dct_block,quant_matrix_CbCr)
+        Cb_dct[i:i+step, j:j+step] = dct_block_quant
+
+  for i in range(0,lines_Cr,step):
+    for j in range(0,cols_Cr,step):
+        dct_block = Cr_dct[i:i+step, j:j+step]
+        dct_block_quant = quantize_block(dct_block,quant_matrix_CbCr)
+        Cr_dct[i:i+step, j:j+step] = dct_block_quant
+
+  Y_dct_log = np.log(np.abs(Y_dct) + 0.0001)
+  Cb_dct_log = np.log(np.abs(Cb_dct) + 0.0001)
+  Cr_dct_log = np.log(np.abs(Cr_dct) + 0.0001)
+
+  # Displaying DCT images
+  plt.figure(figsize=(12, 4))
+  plt.subplot(1, 3, 1)
+  plt.imshow(Y_dct_log, cmap='gray')
+  plt.title('DCT quant '+ str(fq) + ' ' + str(step) + 'x' + str(step) + ' of Y')
+  plt.subplot(1, 3, 2)
+  plt.imshow(Cb_dct_log, cmap='gray')
+  plt.title('DCT quant '+ str(fq) + ' ' + str(step) + 'x' + str(step) + ' of Cb')
+  plt.subplot(1, 3, 3)
+  plt.imshow(Cr_dct_log, cmap='gray')
+  plt.title('DCT quant '+ str(fq) + ' ' + str(step) + 'x' + str(step) + ' of Cr')
+  plt.tight_layout()
+  plt.show()
+
+  return Y_dct_log, Cb_dct_log, Cr_dct_log
+
+  #8.2. Crie também a função inversa.
+
+  '''
+  8.4. Decoder: Desquantize os coeficientes da DCT, usando os mesmos factores de
+  qualidade. Visualize as imagens obtidas.
+  '''
+
+def dequantize_block(quantized_block, quant_matrix): #AINDA ESTÁ MAL, TENHO DE FAZER UNS TRUQUES POR CAUSA DE ARREDONDAMENTOS
+
+  dequantized_block = quantized_block * quant_matrix
+  return dequantized_block
 
 
 def main():
@@ -461,6 +589,7 @@ def main():
 
     print("\n#6\n")
 
+    '''
     # 4:2:0 & LINEAR
     Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False,True, y ,cb ,cr, "4:2:0",cv2.INTER_LINEAR)
   
@@ -624,6 +753,48 @@ def main():
     print("Dimensões de Y:", Y.shape)
     print("Dimensões de Cb:", Cb.shape)
     print("Dimensões de Cr:", Cr.shape)
+    '''
+
+    # 4:2:2 & LINEAR
+    Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False, True, y ,cb ,cr, "4:2:2",cv2.INTER_LINEAR)
+    
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 3, 1)
+    plt.imshow(Y_d, cmap='gray')
+    plt.title('Y downsampling 4:2:2 (LINEAR)')
+    plt.subplot(1, 3, 2)
+    plt.imshow(Cb_d, cmap='gray')
+    plt.title(f'Cb downsampling 4:2:2 (LINEAR)')
+    plt.subplot(1, 3, 3)
+    plt.imshow(Cr_d, cmap='gray')
+    plt.title(f'Cr downsampling 4:2:2 (LINEAR)')
+    plt.tight_layout()
+    plt.show()
+
+    print("\n---[downsampling 4:2:2 (LINEAR)]---\n")
+    print("Dimensões de Y_d:", Y_d.shape)
+    print("Dimensões de Cb_d:", Cb_d.shape)
+    print("Dimensões de Cr_d:", Cr_d.shape)
+
+    Y, Cb, Cr = decoder(None,None,None,None,None,None,False, False, False, True, Y_d , Cb_d , Cr_d, cv2.INTER_LINEAR)
+
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 3, 1)
+    plt.imshow(Y, cmap='gray')
+    plt.title('Y upsampling  4:2:2 (LINEAR)')
+    plt.subplot(1, 3, 2)
+    plt.imshow(Cb, cmap='gray')
+    plt.title(f'Cb upsampling  4:2:2 (LINEAR)')
+    plt.subplot(1, 3, 3)
+    plt.imshow(Cr, cmap='gray')
+    plt.title(f'Cr upsampling  4:2:2 (LINEAR)')
+    plt.tight_layout()
+    plt.show()
+    
+    print("\n---[upsampling 4:2:2 (LINEAR)]---\n")
+    print("Dimensões de Y:", Y.shape)
+    print("Dimensões de Cb:", Cb.shape)
+    print("Dimensões de Cr:", Cr.shape)
 
     print("\n#7\n")
 
@@ -631,7 +802,8 @@ def main():
     
     #7.1. DCT nos canais completos
 
-    #7.1.1. Crie uma função para calcular a DCT de um canal completo. Utilize a função scipy.fftpack.dct. 
+    #7.1.1. Crie uma função para calcular a DCT de um canal completo. Utilize a função scipy.fftpack.dct.
+
     '''
     7.1.3. Encoder: Aplique a função desenvolvida em 7.1.1 a Y_d, Cb_d, Cr_d e visualize as
     imagens obtidas (Y_dct, Cb_dct, Cr_dct). Sugestão: atendendo à gama ampla de
@@ -681,6 +853,40 @@ def main():
     print("Dimensões de Y_d",Y_d.shape)
     print("Dimensões de Cb_d",Cb_d.shape)
     print("Dimensões de Cr_d",Cr_d.shape)
+
+
+    #8. Quantização.
+      
+      #8.1. Crie uma função para quantizar os coeficientes da DCT para cada bloco 8x8. 
+    
+    '''
+      8.3. Encoder: Quantize os coeficientes da DCT, usando os seguintes factores de qualidade:
+      10, 25, 50, 75 e 100. Visualize as imagens obtidas (Y_q, CB_q e Cr_q).
+    '''
+
+    matriz_quantizacao_Y = [
+    [16, 11, 10, 16, 24, 40, 51, 61],
+    [12, 12, 14, 19, 26, 58, 60, 55],
+    [14, 13, 16, 24, 40, 57, 69, 56],
+    [14, 17, 22, 29, 51, 87, 80, 62],
+    [18, 22, 37, 56, 68, 109, 103, 77],
+    [24, 35, 55, 64, 81, 104, 113, 92],
+    [49, 64, 78, 87, 103, 121, 120, 101],
+    [72, 92, 95, 98, 112, 100, 103, 99]
+    ]
+
+    matriz_quantizacao_CbCr = [
+    [17, 18, 24, 47, 99, 99, 99, 99],
+    [18, 21, 26, 66, 99, 99, 99, 99],
+    [24, 26, 56, 99, 99, 99, 99, 99],
+    [47, 66, 99, 99, 99, 99, 99, 99],
+    [99, 99, 99, 99, 99, 99, 99, 99],
+    [99, 99, 99, 99, 99, 99, 99, 99],
+    [99, 99, 99, 99, 99, 99, 99, 99],
+    [99, 99, 99, 99, 99, 99, 99, 99]
+    ]
+
+    Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant = encoder(None,False,False,False,False,Y_dct8, Cb_dct8, Cr_dct8,None,None,False,False,8,True,50,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
 
     return
 
