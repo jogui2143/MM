@@ -26,7 +26,7 @@ def encoder(img = None, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y
      return DCT(Y,Cb,Cr)
   
   elif dctBlocks:
-     return DCTBlocks(Y,Cb,Cr,step)
+     return DCT_Blocks(Y,Cb,Cr,step)
      
  
 def decoder(R=None,G=None,B=None,img_ycbcr = None,padded_img = None, og = None, unpad = False,join = False,YCBCR_to_RGB = False, up = False, Y_d = None, Cb_d = None, Cr_d = None, interpolation = None,Invert_DCT = False,invert_dct_Blocks=False,step=None):
@@ -279,46 +279,46 @@ def invertDCT(Y_dct, Cb_dct, Cr_dct):
 7.2.1. Usando as mesmas funções para cálculo da DCT, crie uma função que calcule a
 DCT de um canal completo em blocos BSxBS. 
 '''
-def DCTBlocks(Y, Cb, Cr,step):
-  # Applying DCT
+def DCT_Blocks_Channel(canal, tamanho_bloco=8):
+    altura, largura = canal.shape
+    canal_dct = np.zeros_like(canal, dtype=float)
+    
+    for i in range(0, altura, tamanho_bloco):
+        for j in range(0, largura, tamanho_bloco):
+            bloco = canal[i:i+tamanho_bloco, j:j+tamanho_bloco]
+            bloco_padded = np.pad(bloco, ((0, tamanho_bloco - bloco.shape[0]), (0, tamanho_bloco - bloco.shape[1])), 'constant', constant_values=0)
+            dct_bloco = dct(dct(bloco_padded.T, norm='ortho').T, norm='ortho')
+            
+            # Corrigindo a inserção do bloco
+            canal_dct[i:i+min(tamanho_bloco, bloco.shape[0]), j:j+min(tamanho_bloco, bloco.shape[1])] = dct_bloco[:bloco.shape[0], :bloco.shape[1]]
+    
+    return canal_dct
 
-  out_Y = np.zeros(Y.shape)
-  for i in range(0, Y.shape[0], step):
-    for j in range(0, Y.shape[1], step):
-      out_Y[i:i + step, j:j + step] = dct(Y[i:i + step, j:j + step])
+def DCT_Blocks(Y, Cb, Cr, tamanho_bloco=8):  
+    Y_dct = DCT_Blocks_Channel(Y, tamanho_bloco)
+    Cb_dct = DCT_Blocks_Channel(Cb, tamanho_bloco)
+    Cr_dct = DCT_Blocks_Channel(Cr, tamanho_bloco)
 
-  out_Cb = np.zeros(Cb.shape)
-  for i in range(0, Cb.shape[0], step):
-    for j in range(0, Cb.shape[1], step):
-      out_Cb[i:i + step, j:j + step] = dct(Cb[i:i + step, j:j + step])
-  
-  out_Cr = np.zeros(Cr.shape)
-  for i in range(0, Cr.shape[0], step):
-    for j in range(0, Cr.shape[1], step):
-      out_Cr[i:i + step, j:j + step] = dct(Cr[i:i + step, j:j + step])
+    Y_dct_log = np.log(np.abs(Y_dct) + 0.0001)
+    Cb_dct_log = np.log(np.abs(Cb_dct) + 0.0001)
+    Cr_dct_log = np.log(np.abs(Cr_dct) + 0.0001)
 
-  
-  
-  # Log transformation for better visualization
-  Y_dct_log = np.log(np.abs(out_Y) + 0.0001)
-  Cb_dct_log = np.log(np.abs(out_Cb) + 0.0001)
-  Cr_dct_log = np.log(np.abs(out_Cr) + 0.0001)
-
-  # Displaying DCT images
-  plt.figure(figsize=(12, 4))
-  plt.subplot(1, 3, 1)
-  plt.imshow(Y_dct_log, cmap='gray')
-  plt.title('Log DCT of Y')
-  plt.subplot(1, 3, 2)
-  plt.imshow(Cb_dct_log, cmap='gray')
-  plt.title('Log DCT of Cb')
-  plt.subplot(1, 3, 3)
-  plt.imshow(Cr_dct_log, cmap='gray')
-  plt.title('Log DCT of Cr')
-  plt.tight_layout()
-  plt.show()
-
-  return out_Y,out_Cb,out_Cr
+    
+    # Displaying DCT images
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 3, 1)
+    plt.imshow(Y_dct_log, cmap='gray')
+    plt.title('DCT ' + str(tamanho_bloco) + 'x' + str(tamanho_bloco) + ' of Y')
+    plt.subplot(1, 3, 2)
+    plt.imshow(Cb_dct_log, cmap='gray')
+    plt.title('DCT ' + str(tamanho_bloco) + 'x' + str(tamanho_bloco) + ' of Cb')
+    plt.subplot(1, 3, 3)
+    plt.imshow(Cr_dct_log, cmap='gray')
+    plt.title('DCT ' + str(tamanho_bloco) + 'x' + str(tamanho_bloco) + ' of Cr')
+    plt.tight_layout()
+    plt.show()
+    
+    return Y_dct, Cb_dct, Cr_dct
 
 #7.2.2. Crie também a função inversa (IDCT BSxBS). 
 def invertDCTBlocks(Y, Cb, Cr,step):
@@ -352,11 +352,7 @@ def invertDCTBlocks(Y, Cb, Cr,step):
   plt.tight_layout()
   plt.show()
 
-
   return idctOut_Y,idctOut_Cb,idctOut_Cr
-
-
-
 
 
 
