@@ -530,7 +530,7 @@ def dequantized_dct(Y_dct_quant, Cb_dct_quant, Cr_dct_quant,quant_matrix_Y,quant
     Cr_dct_log = np.log(np.abs(Cr_dct_quant) + 0.0001)
 
 
-    # Displaying DCT images
+    # Displaying dequantized images
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 3, 1)
     plt.imshow(Y_dct_log, cmap='gray')
