@@ -471,7 +471,7 @@ def quantized_dct(Y_dct, Cb_dct, Cr_dct,quant_matrix_Y,quant_matrix_CbCr,step,fq
   plt.tight_layout()
   plt.show()
 
-  return Y_dct_log, Cb_dct_log, Cr_dct_log
+  return Y_dct, Cb_dct, Cr_dct
 
   #8.2. Crie também a função inversa.
 
@@ -480,11 +480,67 @@ def quantized_dct(Y_dct, Cb_dct, Cr_dct,quant_matrix_Y,quant_matrix_CbCr,step,fq
   qualidade. Visualize as imagens obtidas.
   '''
 
-def dequantize_block(quantized_block, quant_matrix): #AINDA ESTÁ MAL, TENHO DE FAZER UNS TRUQUES POR CAUSA DE ARREDONDAMENTOS
+def dequantize_block(quantized_block, fq,Lum_quant_matrix_std,Cro_quant_matrix_std,Crominancia = False,Luminancia = False):
 
-  dequantized_block = quantized_block * quant_matrix
+  Qs_Cro, Qs_Lum = adj_quant_matrix(fq,Lum_quant_matrix_std,Cro_quant_matrix_std)
+
+  if Crominancia==True:
+     dequantized_block = quantized_block * Qs_Cro
+  
+  elif Luminancia == True:
+     dequantized_block = quantized_block * Qs_Lum
+     
   return dequantized_block
 
+def dequantized_dct(Y_dct_quant, Cb_dct_quant, Cr_dct_quant,quant_matrix_Y,quant_matrix_CbCr,step, fq):
+
+    lines_Y, cols_Y = Y_dct_quant.shape
+    lines_Cb, cols_Cb = Cb_dct_quant.shape
+    lines_Cr, cols_Cr = Cr_dct_quant.shape
+
+    canal_Y_dct_desquantizado = np.zeros_like(Y_dct_quant)
+
+    canal_Cb_dct_desquantizado = np.zeros_like(Cb_dct_quant)
+
+    canal_Cr_dct_desquantizado = np.zeros_like(Cr_dct_quant)
+
+    # Process Y channel
+    for i in range(0, lines_Y, step):
+        for j in range(0, cols_Y, step):
+            quant_dct_block = Y_dct_quant[i:i+step, j:j+step]
+            canal_Y_dct_desquantizado[i:i+step, j:j+step] = dequantize_block(quant_dct_block, fq, quant_matrix_Y, quant_matrix_CbCr, Crominancia=False, Luminancia=True)
+
+    # Process Cb channel
+    for i in range(0, lines_Cb, step):
+        for j in range(0, cols_Cb, step):
+            quant_dct_block = Cb_dct_quant[i:i+step, j:j+step]
+            canal_Cb_dct_desquantizado[i:i+step, j:j+step] = dequantize_block(quant_dct_block, fq, quant_matrix_Y, quant_matrix_CbCr, Crominancia=True, Luminancia=False)
+
+    # Process Cr channel
+    for i in range(0, lines_Cr, step):
+        for j in range(0, cols_Cr, step):
+            quant_dct_block = Cr_dct_quant[i:i+step, j:j+step]
+            canal_Cr_dct_desquantizado[i:i+step, j:j+step] = dequantize_block(quant_dct_block, fq, quant_matrix_Y, quant_matrix_CbCr, Crominancia=True, Luminancia=False)
+
+    Y_dct_log = np.log(np.abs(canal_Y_dct_desquantizado) + 0.0001)
+    Cb_dct_log = np.log(np.abs(canal_Cb_dct_desquantizado) + 0.0001)
+    Cr_dct_log = np.log(np.abs(canal_Cr_dct_desquantizado) + 0.0001)
+
+    # Displaying dequantized images
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 3, 1)
+    plt.imshow(Y_dct_log, cmap='gray')
+    plt.title('DCT dequant '+ str(fq) + ' ' + str(step) + 'x' + str(step) + ' of Y')
+    plt.subplot(1, 3, 2)
+    plt.imshow(Cb_dct_log, cmap='gray')
+    plt.title('DCT dequant '+ str(fq) + ' ' + str(step) + 'x' + str(step) + ' of Cb')
+    plt.subplot(1, 3, 3)
+    plt.imshow(Cr_dct_log, cmap='gray')
+    plt.title('DCT dequant '+ str(fq) + ' ' + str(step) + 'x' + str(step) + ' of Cr')
+    plt.tight_layout()
+    plt.show()
+
+    return canal_Y_dct_desquantizado, canal_Cb_dct_desquantizado, canal_Cr_dct_desquantizado
 
 def main():
     
@@ -838,6 +894,8 @@ def main():
     """
 
     Y_dct8, Cb_dct8, Cr_dct8=encoder(None,False,False,False,False,Y_d,Cb_d,Cr_d,None,None,False,True,8)
+    print("Y_dct8")
+    print(Y_dct8[0,0:7])
     Y_d, Cb_d, Cr_d=decoder(None,None,None,None,None,None,False,False,False,False, Y_dct8, Cb_dct8, Cr_dct8,None,False,True,8)
 
     print("\nValores originais Y_d Cb_d Cr_d, pós DCT com blocos 8x8:")
@@ -887,7 +945,9 @@ def main():
     ]
 
     Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant = encoder(None,False,False,False,False,Y_dct8, Cb_dct8, Cr_dct8,None,None,False,False,8,True,50,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
-
+ 
+    Y_dct8, Cb_dct8, Cr_dct8 = dequantized_dct(Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant, matriz_quantizacao_Y,matriz_quantizacao_CbCr,8,50)
+    
     return
 
 if __name__ == "__main__":
