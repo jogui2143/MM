@@ -240,6 +240,12 @@ def DCT(Y, Cb, Cr):
 
     return Y_dct,Cb_dct,Cr_dct
 
+def single_DCT_log(channel):
+   return np.log(np.abs(channel) + .0001)
+
+def mult_DCT_log(channels):
+  return single_DCT_log(channels[0]),single_DCT_log(channels[1]),single_DCT_log(channels[2])
+
 '''
 7.1.2. Crie também a função inversa (usando scipy.fftpack.idct).
 Nota: para uma matriz, X, com duas dimensões, deverá fazer:
@@ -1094,11 +1100,14 @@ def main():
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 3, 1)
     plt.imshow(bruh[0], cmap='gray')
+    plt.imshow(bruh[0], cmap='gray')
     plt.title('DPCM Y')
     plt.subplot(1, 3, 2)
     plt.imshow(bruh[1], cmap='gray')
+    plt.imshow(bruh[1], cmap='gray')
     plt.title('DPCM Cb')
     plt.subplot(1, 3, 3)
+    plt.imshow(bruh[2], cmap='gray')
     plt.imshow(bruh[2], cmap='gray')
     plt.title('DPCM Cr')
     plt.tight_layout()
