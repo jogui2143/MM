@@ -894,8 +894,6 @@ def main():
     """
 
     Y_dct8, Cb_dct8, Cr_dct8=encoder(None,False,False,False,False,Y_d,Cb_d,Cr_d,None,None,False,True,8)
-    print("Y_dct8")
-    print(Y_dct8[0,0:7])
     Y_d, Cb_d, Cr_d=decoder(None,None,None,None,None,None,False,False,False,False, Y_dct8, Cb_dct8, Cr_dct8,None,False,True,8)
 
     print("\nValores originais Y_d Cb_d Cr_d, pós DCT com blocos 8x8:")
