@@ -319,6 +319,13 @@ def DCT_Blocks(Y, Cb, Cr, tamanho_bloco=8):
     
     return Y_dct, Cb_dct, Cr_dct
 
+
+def single_DCT_log(channel):
+   return np.log(np.abs(channel) + .0001)
+
+def mult_DCT_log(channels):
+  return single_DCT_log(channels[0]),single_DCT_log(channels[1]),single_DCT_log(channels[2])
+
 #7.2.2. Crie também a função inversa (IDCT BSxBS). 
 def invertDCTBlocks(Y, Cb, Cr,step):
 
@@ -471,7 +478,7 @@ def quantized_dct(Y_dct, Cb_dct, Cr_dct,quant_matrix_Y,quant_matrix_CbCr,step,fq
   plt.tight_layout()
   plt.show()
 
-  return Y_dct_log, Cb_dct_log, Cr_dct_log
+  return Y_dct, Cb_dct, Cr_dct
 
   #8.2. Crie também a função inversa.
 
@@ -633,6 +640,36 @@ def DPCM(channels):
       dc0[0] = dc
 
   return Y_dct_log, Cb_dct_log, Cr_dct_log
+
+def invDPCM(channels):
+  Y_dct_log = channels[0].copy()
+  Cb_dct_log = channels[1].copy()
+  Cr_dct_log = channels[2].copy()
+
+  y, cb, cr = channels
+
+  original_Y = Y_dct_log.shape
+  original_Cb = Cb_dct_log.shape
+
+  dc0 = [0,0,0]
+  for i in range(0, original_Y[0], 8):
+    for j in range(0, original_Y[1], 8):
+      if i == 0 and j == 0:
+        dc0 = [y[0,0], cb[0,0], cr[0,0]]
+        continue
+      if i < original_Cb[0] and j < original_Cb[1]:
+        dc = cb[i,j], cr[i,j]
+        diff = dc[0] + dc0[1], dc[1] + dc0[2]
+        Cb_dct_log[i,j], Cr_dct_log[i,j] = diff
+        dc0[1] = diff[0]
+        dc0[2] = diff[1]
+      dc = y[i,j]
+      diff = dc + dc0[0]
+      Y_dct_log[i,j] = diff
+      dc0[0] = diff
+  return y, cb, cr
+
+
       
   
 
@@ -1037,7 +1074,9 @@ def main():
     ]
 
     Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant = encoder(None,False,False,False,False,Y_dct8, Cb_dct8, Cr_dct8,None,None,False,False,8,True,50,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
-
+    Y_DPCM,CB_DPCM,CR_DPCM= Y_dct8_quant.copy(), Cb_dct8_quant.copy(), Cr_dct8_quant.copy()
+    
+    
     #Desquantificação teste
 
     Y_dct_dequant, Cb_dct_dequant, Cr_dct_dequant = dequantized_dct(Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant,matriz_quantizacao_Y,matriz_quantizacao_CbCr,8, 50)
@@ -1046,21 +1085,47 @@ def main():
     #idctOut_Y,idctOut_Cb,idctOut_Cr = invertDCTBlocks(Y_dct_dequant, Cb_dct_dequant, Cr_dct_dequant,8)
    #Y_inv_dct,Cb_inv_dct,Cr_inv_dct = invertDCT(idctOut_Y,idctOut_Cb,idctOut_Cr)
     
+    
+    
     #9 TESTE
-    channels = [Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant]
-    dcpm = DPCM(channels)
+    channels = [ Y_DPCM,CB_DPCM,CR_DPCM]
+    dpcm = DPCM(channels)
+    bruh = mult_DCT_log(dpcm)
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 3, 1)
-    plt.imshow(dcpm[0], cmap='gray')
+    plt.imshow(bruh[0], cmap='gray')
     plt.title('DPCM Y')
     plt.subplot(1, 3, 2)
-    plt.imshow(dcpm[1], cmap='gray')
+    plt.imshow(bruh[1], cmap='gray')
     plt.title('DPCM Cb')
     plt.subplot(1, 3, 3)
-    plt.imshow(dcpm[2], cmap='gray')
+    plt.imshow(bruh[2], cmap='gray')
     plt.title('DPCM Cr')
     plt.tight_layout()
     plt.show()
+
+   
+    invdpcm = invDPCM(dpcm)
+    bruh = mult_DCT_log(invdpcm)
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 3, 1)
+    plt.imshow(bruh[0], cmap='gray')
+    plt.title('DPCM Y')
+    plt.subplot(1, 3, 2)
+    plt.imshow(bruh[1], cmap='gray')
+    plt.title('DPCM Cb')
+    plt.subplot(1, 3, 3)
+    plt.imshow(bruh[2], cmap='gray')
+    plt.title('DPCM Cr')
+    plt.tight_layout()
+    plt.show()
+
+    conta=[invdpcm[0]-dpcm[0],invdpcm[1]-dpcm[1],invdpcm[2]-dpcm[2]]
+
+
+    print(conta)
+    
+   
     return
 
 if __name__ == "__main__":
