@@ -30,7 +30,7 @@ def encoder(img = None, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y
     return quantized_dct(Y, Cb, Cr,Qs_Cro,Qs_Lum,step,fq)
      
  
-def decoder(R=None,G=None,B=None,img_ycbcr = None,padded_img = None, og = None, unpad = False,join = False,YCBCR_to_RGB = False, up = False, Y_d = None, Cb_d = None, Cr_d = None, interpolation = None,Invert_DCT = False,invert_dct_Blocks=False,step=None):
+def decoder(R=None,G=None,B=None,img_ycbcr = None,padded_img = None, og = None, unpad = False,join = False,YCBCR_to_RGB = False, up = False, Y_d = None, Cb_d = None, Cr_d = None, interpolation = None,Invert_DCT = False,invert_dct_Blocks=False,step=None,dequant = False,quant_matrix_Y = None,quant_matrix_CbCr = None, fq = None):
 
   if join:
      imgRec = joinRGB(R, G, B)
@@ -50,6 +50,9 @@ def decoder(R=None,G=None,B=None,img_ycbcr = None,padded_img = None, og = None, 
   
   elif invert_dct_Blocks:
      return invertDCTBlocks(Y_d,Cb_d,Cr_d,step)
+  
+  elif dequant:        
+     return dequantized_dct(Y_d,Cb_d,Cr_d,quant_matrix_Y,quant_matrix_CbCr,step,fq)
   
 
 #3.2 Crie uma função para implementar um colormap definido pelo utilizador.
@@ -943,8 +946,8 @@ def main():
     ]
 
     Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant = encoder(None,False,False,False,False,Y_dct8, Cb_dct8, Cr_dct8,None,None,False,False,8,True,50,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
- 
-    Y_dct8, Cb_dct8, Cr_dct8 = dequantized_dct(Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant, matriz_quantizacao_Y,matriz_quantizacao_CbCr,8,50)
+     
+    Y_dct8, Cb_dct8, Cr_dct8 = decoder(None,None,None,None,None,None,False,False,False,False,Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant,None,False,False,8,True,matriz_quantizacao_Y,matriz_quantizacao_CbCr,50)
     
     return
 
