@@ -377,9 +377,7 @@ def invertDCTBlocks(Y, Cb, Cr,step):
 
   return idctOut_Y,idctOut_Cb,idctOut_Cr
 
-#8. Quantização.
-
-  #8.1. Crie uma função para quantizar os coeficientes da DCT para cada bloco 8x8
+#8.1. Crie uma função para quantizar os coeficientes da DCT para cada bloco 8x8
 
   '''
   8.3. Encoder: Quantize os coeficientes da DCT, usando os seguintes factores de qualidade:
@@ -497,7 +495,8 @@ def quantized_dct(Y_dct, Cb_dct, Cr_dct,quant_matrix_Y,quant_matrix_CbCr,step,fq
   qualidade. Visualize as imagens obtidas.
   '''
 
-def dequantize_block(quantized_block, fq,Lum_quant_matrix_std,Cro_quant_matrix_std,Crominancia = False,Luminancia = False): 
+def dequantize_block(quantized_block, fq,Lum_quant_matrix_std,Cro_quant_matrix_std,Crominancia = False,Luminancia = False):
+
   Qs_Cro, Qs_Lum = adj_quant_matrix(fq,Lum_quant_matrix_std,Cro_quant_matrix_std)
 
   if Crominancia==True:
@@ -506,46 +505,41 @@ def dequantize_block(quantized_block, fq,Lum_quant_matrix_std,Cro_quant_matrix_s
   elif Luminancia == True:
      dequantized_block = quantized_block * Qs_Lum
      
-
-  
   return dequantized_block
 
 def dequantized_dct(Y_dct_quant, Cb_dct_quant, Cr_dct_quant,quant_matrix_Y,quant_matrix_CbCr,step, fq):
-   
-   
-  # Function to apply IDCT to a block
-    def apply_idct(block):
-        return idct(idct(block.T, norm='ortho').T, norm='ortho')
 
     lines_Y, cols_Y = Y_dct_quant.shape
     lines_Cb, cols_Cb = Cb_dct_quant.shape
     lines_Cr, cols_Cr = Cr_dct_quant.shape
 
+    canal_Y_dct_desquantizado = np.zeros_like(Y_dct_quant)
+
+    canal_Cb_dct_desquantizado = np.zeros_like(Cb_dct_quant)
+
+    canal_Cr_dct_desquantizado = np.zeros_like(Cr_dct_quant)
+
     # Process Y channel
     for i in range(0, lines_Y, step):
         for j in range(0, cols_Y, step):
-            dct_block = Y_dct_quant[i:i+step, j:j+step]
-            Y_dct_quant[i:i+step, j:j+step] = apply_idct(dequantize_block(dct_block, fq, quant_matrix_Y, quant_matrix_CbCr, Crominancia=False, Luminancia=True))
+            quant_dct_block = Y_dct_quant[i:i+step, j:j+step]
+            canal_Y_dct_desquantizado[i:i+step, j:j+step] = dequantize_block(quant_dct_block, fq, quant_matrix_Y, quant_matrix_CbCr, Crominancia=False, Luminancia=True)
 
     # Process Cb channel
     for i in range(0, lines_Cb, step):
         for j in range(0, cols_Cb, step):
-            dct_block = Cb_dct_quant[i:i+step, j:j+step]
-            Cb_dct_quant[i:i+step, j:j+step] = apply_idct(dequantize_block(dct_block, fq, quant_matrix_Y, quant_matrix_CbCr, Crominancia=True, Luminancia=False))
+            quant_dct_block = Cb_dct_quant[i:i+step, j:j+step]
+            canal_Cb_dct_desquantizado[i:i+step, j:j+step] = dequantize_block(quant_dct_block, fq, quant_matrix_Y, quant_matrix_CbCr, Crominancia=True, Luminancia=False)
 
     # Process Cr channel
     for i in range(0, lines_Cr, step):
         for j in range(0, cols_Cr, step):
-            dct_block = Cr_dct_quant[i:i+step, j:j+step]
-            Cr_dct_quant[i:i+step, j:j+step] = apply_idct(dequantize_block(dct_block, fq, quant_matrix_Y, quant_matrix_CbCr, Crominancia=True, Luminancia=False))
+            quant_dct_block = Cr_dct_quant[i:i+step, j:j+step]
+            canal_Cr_dct_desquantizado[i:i+step, j:j+step] = dequantize_block(quant_dct_block, fq, quant_matrix_Y, quant_matrix_CbCr, Crominancia=True, Luminancia=False)
 
-
-  
-  
-    Y_dct_log = np.log(np.abs(Y_dct_quant) + 0.0001)
-    Cb_dct_log = np.log(np.abs(Cb_dct_quant) + 0.0001)
-    Cr_dct_log = np.log(np.abs(Cr_dct_quant) + 0.0001)
-
+    Y_dct_log = np.log(np.abs(canal_Y_dct_desquantizado) + 0.0001)
+    Cb_dct_log = np.log(np.abs(canal_Cb_dct_desquantizado) + 0.0001)
+    Cr_dct_log = np.log(np.abs(canal_Cr_dct_desquantizado) + 0.0001)
 
     # Displaying dequantized images
     plt.figure(figsize=(12, 4))
@@ -561,66 +555,8 @@ def dequantized_dct(Y_dct_quant, Cb_dct_quant, Cr_dct_quant,quant_matrix_Y,quant
     plt.tight_layout()
     plt.show()
 
-    return Y_dct_quant, Cb_dct_quant, Cr_dct_quant
+    return canal_Y_dct_desquantizado, canal_Cb_dct_desquantizado, canal_Cr_dct_desquantizado
 
-
-def reconstruct_image(dct_quantized_image, quantization_matrix):
-    # Obtendo as dimensões da imagem
-    num_rows, num_cols = dct_quantized_image.shape[0], dct_quantized_image.shape[1]
-    
-    # Criando uma imagem vazia para os resultados da reconstrução
-    reconstructed_image = np.zeros((num_rows, num_cols))
-
-    # Processo de reconstrução da imagem bloco por bloco
-    for row in range(0, num_rows, 8):
-        for col in range(0, num_cols, 8):
-            # Passo 1: Desquantizar o bloco
-            quantized_block = dct_quantized_image[row:row+8, col:col+8]
-            dequantized_block = dequantize_block(quantized_block, quantization_matrix)
-            
-            # Passo 2: Aplicar a IDCT para reconstruir o bloco
-            reconstructed_block = idct(idct(dequantized_block.T, norm='ortho').T, norm='ortho')
-
-            # Passo 3: Armazenar o bloco reconstruído na imagem resultante
-            reconstructed_image[row:row+8, col:col+8] = reconstructed_block
-
-    # Assegurar que todos os valores de pixel estejam no intervalo válido [0, 255]
-    reconstructed_image[reconstructed_image < 0] = 0
-    reconstructed_image[reconstructed_image > 255] = 255
-
-    
-      # Displaying DCT images
-    plt.figure(figsize=(12, 4))
-    plt.subplot(1, 3, 1)
-    plt.imshow(reconstructed_image, cmap='gray')
-    
-
-    return reconstructed_image.astype(np.uint8)
-
-# Exemplo de uso da função:
-# reconstructed_image = reconstruct_image(dct_quantized_image, quantization_matrix)
-
-# Função para desquantizar os canais DCT e aplicar a IDCT
-def dequantized_dct_and_reconstruct(Y_dct_quant, Cb_dct_quant, Cr_dct_quant, quant_matrix_Y, quant_matrix_CbCr, step, fq):
-    # Função interna para aplicar a IDCT em um canal
-    def apply_idct_to_channel(dct_channel):
-        channel_idct = np.zeros_like(dct_channel)
-        for i in range(0, dct_channel.shape[0], step):
-            for j in range(0, dct_channel.shape[1], step):
-                channel_idct[i:i+step, j:j+step] = idct(idct(dct_channel[i:i+step, j:j+step].T, norm='ortho').T, norm='ortho')
-        return channel_idct
-    
-    # Desquantização e aplicação da IDCT para cada canal
-    Y_idct = apply_idct_to_channel(dequantize_block(Y_dct_quant, quant_matrix_Y, quant_matrix_CbCr, Crominancia=False, Luminancia=True))
-    Cb_idct = apply_idct_to_channel(dequantize_block(Cb_dct_quant, quant_matrix_Y, quant_matrix_CbCr, Crominancia=True, Luminancia=False))
-    Cr_idct = apply_idct_to_channel(dequantize_block(Cr_dct_quant, quant_matrix_Y, quant_matrix_CbCr, Crominancia=True, Luminancia=False))
-    
-    # Certificando que os valores de pixels estejam no intervalo correto após IDCT
-    Y_idct = np.clip(Y_idct, 0, 255).astype(np.uint8)
-    Cb_idct = np.clip(Cb_idct, 0, 255).astype(np.uint8)
-    Cr_idct = np.clip(Cr_idct, 0, 255).astype(np.uint8)
-    
-    return Y_idct, Cb_idct, Cr_idct
 
 def DPCM(channels):
   Y_dct_log = channels[0].copy()
