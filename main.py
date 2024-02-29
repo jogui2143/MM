@@ -4,7 +4,7 @@ import numpy as np
 from scipy.fftpack import dct, idct
 import cv2
 
-def encoder(img = None, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y=None, Cb=None, Cr=None, subsampling_type=None, interpolation=None,dct = False,dctBlocks=False,step=None,quant = False,fq = None,quant_matrix_Y = None,quant_matrix_CbCr = None):
+def encoder(img = None, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y=None, Cb=None, Cr=None, subsampling_type=None, interpolation=None,dct = False,dctBlocks=False,step=None,quant = False,fq = None,quant_matrix_Y = None,quant_matrix_CbCr = None,dpcmfds=False,channel=None):
 
   if split:
     R, G, B = splitRGB(img)
@@ -28,6 +28,10 @@ def encoder(img = None, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y
   elif quant:
     Qs_Cro, Qs_Lum = adj_quant_matrix(fq,quant_matrix_Y,quant_matrix_CbCr)
     return quantized_dct(Y, Cb, Cr,Qs_Cro,Qs_Lum,step,fq)
+  
+  elif dpcmfds:
+     return DPCM(channel)
+
      
  
 def decoder(R=None,G=None,B=None,img_ycbcr = None,padded_img = None, og = None, unpad = False,join = False,YCBCR_to_RGB = False, up = False, Y_d = None, Cb_d = None, Cr_d = None, interpolation = None,Invert_DCT = False,invert_dct_Blocks=False,step=None):
@@ -1081,7 +1085,7 @@ def main():
 
     Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant = encoder(None,False,False,False,False,Y_dct8, Cb_dct8, Cr_dct8,None,None,False,False,8,True,50,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
     Y_DPCM,CB_DPCM,CR_DPCM= Y_dct8_quant.copy(), Cb_dct8_quant.copy(), Cr_dct8_quant.copy()
-    
+    channel=[Y_DPCM,CB_DPCM,CR_DPCM]
     
     #Desquantificação teste
 
@@ -1094,8 +1098,9 @@ def main():
     
     
     #9 TESTE
-    channels = [ Y_DPCM,CB_DPCM,CR_DPCM]
-    dpcm = DPCM(channels)
+   
+        #encoder(None,False,False,False,False,Y_dct8, Cb_dct8, Cr_dct8,None,None,False,False,8,True,50,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
+    dpcm=encoder(None,False,False,False,False, Y_DPCM,CB_DPCM,CR_DPCM,None,None,False,False,None,None,None,None,None,True,channel)
     bruh = mult_DCT_log(dpcm)
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 3, 1)
