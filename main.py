@@ -79,12 +79,12 @@ def decoder(R=None,G=None,B=None,img_ycbcr = None,padded_img = None, og = None, 
      return invertDCTBlocks(Y_d,Cb_d,Cr_d,step)
   
 
-#3.2 Crie uma função para implementar um colormap definido pelo utilizador.
+
 def newCmap(keyColors = [(0,0,0),(1,1,1)], name = "gray", N= 256):
     cm = clr.LinearSegmentedColormap.from_list(name, keyColors, N)
     return cm
 
-#3.3 Crie uma função que permita visualizar a imagem com um dado colormap.
+
 def showImg(img, fname="", caption="", cmap=None):
     #print(img.dtype)  # Imprime o tipo de dados da imagem
     plt.figure()  # Cria uma nova figura
@@ -137,7 +137,7 @@ def padding(img):
 def unpadding(img, og):
   return img[:og[0], :og[1], :]
 
-
+#5.3
 def RGB_to_YCbCr(img):
   cm = np.array([[0.299, 0.587, 0.114],
                 [-0.168736, -0.331264, 0.5],
@@ -153,6 +153,7 @@ def RGB_to_YCbCr(img):
 
   return y, cb, cr
 
+#5.4
 def YCbCr_to_RGB(img):
   convmatrix = np.array([[0.299, 0.587, 0.114],
                 [-0.168736, -0.331264, 0.5],
@@ -173,12 +174,11 @@ def YCbCr_to_RGB(img):
   output_matrix[output_matrix < 0] = 0
   return output_matrix
 
-
+#6.1
 def sub_amostragem(Y, Cb, Cr, subsampling_type, interpolation):
       
   width, height = Y.shape[1], Y.shape[0]
 
-  # os valores aqui defenidos dividir por metade um quarto é a maneira como o JPEG funciona para os varios tipos de subamostragem
   if subsampling_type == '4:2:2':
       
       # reduzimos para metade a resolução horizontal do Cb e do Cr
@@ -203,7 +203,7 @@ def upsampling(Y_d,Cb_d,Cr_d,interpolation):
 
     return Y_d, Cb_upsampled, Cr_upsampled
 
-
+#7.1.3
 def DCT(Y, Cb, Cr):
     # Applying DCT
     Y_dct = dct(dct(Y, norm='ortho').T, norm='ortho').T
@@ -226,7 +226,7 @@ def single_DCT_log(channel):
 def mult_DCT_log(channels):
   return single_DCT_log(channels[0]),single_DCT_log(channels[1]),single_DCT_log(channels[2])
 
-
+#7.1.4
 def invertDCT(Y_dct, Cb_dct, Cr_dct):  
     # Applying IDCT
     Y_inv_dct = idct(idct(Y_dct, norm='ortho').T, norm='ortho').T
@@ -255,7 +255,7 @@ def DCT_Blocks_Channel(canal, tamanho_bloco=8,Quant = False):
             canal_dct[i:i+min(tamanho_bloco, bloco.shape[0]), j:j+min(tamanho_bloco, bloco.shape[1])] = dct_bloco[:bloco.shape[0], :bloco.shape[1]]
     
     return canal_dct
-
+#7.2.3
 def DCT_Blocks(Y, Cb, Cr, tamanho_bloco=8):  
     Y_dct = DCT_Blocks_Channel(Y, tamanho_bloco)
     Cb_dct = DCT_Blocks_Channel(Cb, tamanho_bloco)
@@ -281,7 +281,7 @@ def single_DCT_log(channel):
 def mult_DCT_log(channels):
   return single_DCT_log(channels[0]),single_DCT_log(channels[1]),single_DCT_log(channels[2])
 
- 
+#7.2.4
 def invertDCTBlocks(Y, Cb, Cr,step):
 
   idctOut_Y = np.zeros_like(Y)
@@ -373,6 +373,7 @@ def quantize_block(dct_block, quant_matrix):
 
     return quantized_block
 
+#8.3
 def quantized_dct(Y_dct, Cb_dct, Cr_dct,quant_matrix_Y,quant_matrix_CbCr,step,fq):
    
   lines_Y, cols_Y = Y_dct.shape
@@ -423,6 +424,7 @@ def dequantize_block(quantized_block, fq,Lum_quant_matrix_std,Cro_quant_matrix_s
      
   return dequantized_block
 
+#8.4
 def dequantized_dct(Y_dct_quant, Cb_dct_quant, Cr_dct_quant,quant_matrix_Y,quant_matrix_CbCr,step, fq):
 
     lines_Y, cols_Y = Y_dct_quant.shape
@@ -466,7 +468,7 @@ def dequantized_dct(Y_dct_quant, Cb_dct_quant, Cr_dct_quant,quant_matrix_Y,quant
 
     return canal_Y_dct_desquantizado, canal_Cb_dct_desquantizado, canal_Cr_dct_desquantizado
 
-
+#9.3
 def DPCM(channels):
   Y_dct_log = channels[0].copy()
   Cb_dct_log = channels[1].copy()
@@ -496,6 +498,7 @@ def DPCM(channels):
 
   return Y_dct_log, Cb_dct_log, Cr_dct_log
 
+#9.4
 def invDPCM(channels):
   Y_dct_log = channels[0].copy()
   Cb_dct_log = channels[1].copy()
@@ -539,15 +542,18 @@ def display_images(images, titles, colormap='gray'):
 
 def main():
     
+    #3.1
     fname = "airport.bmp"
     img = plt.imread(fname)
     
     original_pixel = img[0, 0]
    
+   #3.2
     cm_red=newCmap([(0,0,0),(1,0,0)], "cm_red", 256)
     cm_green=newCmap([(0,0,0),(0,1,0)], "cm_green", 256)
     cm_blue=newCmap([(0,0,0),(0,0,1)], "cm_blue", 256)
     
+    #3.4
     showImg(img,fname,"Imagem original: ")
     print("\n#4\n")
     print("Dimensão Original: " + str(img.shape))
@@ -555,11 +561,12 @@ def main():
     R, G, B = encoder(img,pad=False,split=True)
 
     decoder(R, G, B, img_ycbcr = None,og = None,unpad = False, join= True,YCBCR_to_RGB = False)
-    
+    #3.6
     showImg(R,fname,"Img Red: ",cm_red)
     showImg(G,fname,"Img Green: ",cm_green)
     showImg(B,fname,"Img Blue: ",cm_blue)
 
+    #4.1
     padded_img, (h, w) = encoder(img, pad=True, split=False)
     print("Dimensão Padded: "+ str(padded_img.shape))  
 
@@ -568,9 +575,11 @@ def main():
     showImg(G,fname,"Img Green padded: ",cm_green)
     showImg(B,fname,"Img Blue padded : ",cm_blue)
 
+    #4.2
     unpadded_img = decoder(R,G,B,img_ycbcr = None,padded_img = padded_img, og = (h,w),unpad = True,join = False,YCBCR_to_RGB = False)
     print("Dimensão Unpadded: " + str(unpadded_img.shape))  
     
+    #5.1
     y,cb,cr = encoder(padded_img,pad = False,split = False, RGB_to_YCBCR = True)
     
     showImg(y,fname,'Canal Y (Luminância)','gray')
@@ -581,30 +590,36 @@ def main():
     
     encoded_ycbcr_img = np.dstack((y, cb, cr))
 
+    #5.2
     recovered_img = decoder(R,G,B,encoded_ycbcr_img,padded_img = padded_img, og = (h,w),unpad = False,join = False,YCBCR_to_RGB = True)
 
-    recovered_pixel = recovered_img[0, 0]
 
+    #5.4
+    recovered_pixel = recovered_img[0, 0]
+    
     splitRGB(recovered_img)
 
     print(f'Original RGB pixel [0,0]: {original_pixel}')
     print(f'Recovered RGB pixel [0,0]: {recovered_pixel}')
   
+
+    #6.1
     Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False, True, y, cb, cr, "4:2:0", cv2.INTER_CUBIC)
     display_images([Y_d, Cb_d, Cr_d], ['Y downsampling 4:2:0 (CUBIC)', 'Cb downsampling 4:2:0 (CUBIC)', 'Cr downsampling 4:2:0 (CUBIC)'])
 
-    # Corresponding upsampling
+    #6.2
     Y, Cb, Cr = decoder(None, None, None, None, None, None, False, False, False, True, Y_d, Cb_d, Cr_d, cv2.INTER_CUBIC)
     display_images([Y, Cb, Cr], ['Y upsampling 4:2:0 (CUBIC)', 'Cb upsampling 4:2:0 (CUBIC)', 'Cr upsampling 4:2:0 (CUBIC)'])
 
-    # Repeat for 4:2:2 & CUBIC
+    #6.1
     Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False, True, y, cb, cr, "4:2:2", cv2.INTER_CUBIC)
     display_images([Y_d, Cb_d, Cr_d], ['Y downsampling 4:2:2 (CUBIC)', 'Cb downsampling 4:2:2 (CUBIC)', 'Cr downsampling 4:2:2 (CUBIC)'])
 
+    #6.2
     Y, Cb, Cr = decoder(None, None, None, None, None, None, False, False, False, True, Y_d, Cb_d, Cr_d, cv2.INTER_CUBIC)
     display_images([Y, Cb, Cr], ['Y upsampling 4:2:2 (CUBIC)', 'Cb upsampling 4:2:2 (CUBIC)', 'Cr upsampling 4:2:2 (CUBIC)'])
-
-        # 4:2:0 & LINEAR
+     
+    #6.1
     Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False, True, y, cb, cr, "4:2:0", cv2.INTER_LINEAR)
     display_images([Y_d, Cb_d, Cr_d], ['Y downsampling 4:2:0 (LINEAR)', 'Cb downsampling 4:2:0 (LINEAR)', 'Cr downsampling 4:2:0 (LINEAR)'])
 
@@ -613,20 +628,22 @@ def main():
     print("Dimensões de Cb_d:", Cb_d.shape)
     print("Dimensões de Cr_d:", Cr_d.shape)
 
+    #6.2
     Y, Cb, Cr = decoder(None, None, None, None, None, None, False, False, False, True, Y_d, Cb_d, Cr_d, cv2.INTER_LINEAR)
     display_images([Y, Cb, Cr], ['Y upsampling 4:2:0 (LINEAR)', 'Cb upsampling 4:2:0 (LINEAR)', 'Cr upsampling 4:2:0 (LINEAR)'])
 
-   
+    #6.1
     Y_d, Cb_d, Cr_d = encoder(padded_img, False, False, False, True, y, cb, cr, "4:2:2", cv2.INTER_LINEAR)
     display_images([Y_d, Cb_d, Cr_d], ['Y downsampling 4:2:2 (LINEAR)', 'Cb downsampling 4:2:2 (LINEAR)', 'Cr downsampling 4:2:2 (LINEAR)'])
 
-    
+    #6.2
     Y, Cb, Cr = decoder(None, None, None, None, None, None, False, False, False, True, Y_d, Cb_d, Cr_d, cv2.INTER_LINEAR)
     display_images([Y, Cb, Cr], ['Y upsampling 4:2:2 (LINEAR)', 'Cb upsampling 4:2:2 (LINEAR)', 'Cr upsampling 4:2:2 (LINEAR)'])
 
-
+    #7.1.1
     Y_d_dct, Cb_d_dct, Cr_d_dct = encoder(None,False,False,False,False,Y_d,Cb_d,Cr_d,None,None,True)
      
+    #7.1.2
     Y_d, Cb_d, Cr_d= decoder(None,None,None,None,None,None,False,False,False,False, Y_d_dct,Cb_d_dct,Cr_d_dct,None,True)
 
     print("Valores originais Y_d Cb_d Cr_d, pós DCT:")
@@ -634,7 +651,9 @@ def main():
     print("Dimensões de Cb_d",Cb_d.shape)
     print("Dimensões de Cr_d",Cr_d.shape)
 
+    #7.2.1
     Y_dct8, Cb_dct8, Cr_dct8=encoder(None,False,False,False,False,Y_d,Cb_d,Cr_d,None,None,False,True,8)
+    #7.2.2
     Y_d, Cb_d, Cr_d=decoder(None,None,None,None,None,None,False,False,False,False, Y_dct8, Cb_dct8, Cr_dct8,None,False,True,8)
 
     print("\nValores originais Y_d Cb_d Cr_d, pós DCT com blocos 8x8:")
@@ -642,24 +661,32 @@ def main():
     print("Dimensões de Cb_d",Cb_d.shape)
     print("Dimensões de Cr_d",Cr_d.shape)
 
+    #7.2.1 64
     Y_dct64, Cb_dct64, Cr_dct64=encoder(None,False,False,False,False,Y_d,Cb_d,Cr_d,None,None,False,True,64)
+
+    #7.2.2 64
     Y_d, Cb_d, Cr_d=decoder(None,None,None,None,None,None,False,False,False,False, Y_dct64, Cb_dct64, Cr_dct64,None,False,True,64)
 
     print("\nValores originais Y_d Cb_d Cr_d, pós DCT com blocos 64x64:")
     print("Dimensões de Y_d",Y_d.shape)
     print("Dimensões de Cb_d",Cb_d.shape)
     print("Dimensões de Cr_d",Cr_d.shape)
-
+   
+    #8.1
     Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant = encoder(None,False,False,False,False,Y_dct8, Cb_dct8, Cr_dct8,None,None,False,False,8,True,50,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
     Y_DPCM,CB_DPCM,CR_DPCM= Y_dct8_quant.copy(), Cb_dct8_quant.copy(), Cr_dct8_quant.copy()
     channel=[Y_DPCM,CB_DPCM,CR_DPCM]
     
-    Y_dct_dequant, Cb_dct_dequant, Cr_dct_dequant = dequantized_dct(Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant,matriz_quantizacao_Y,matriz_quantizacao_CbCr,8, 50)
+    #8.2
+    dequantized_dct(Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant,matriz_quantizacao_Y,matriz_quantizacao_CbCr,8, 50)
    
+    #9.1
     dpcm = encoder(None, False, False, False, False, Y_DPCM, CB_DPCM, CR_DPCM, None, None, False, False, None, None, None, None, None, True, channel)
     bruh = mult_DCT_log(dpcm)
     display_images([bruh[0], bruh[1], bruh[2]], ['DPCM Y', 'DPCM Cb', 'DPCM Cr'])
    
+
+   #9.2
     invdpcm = invDPCM(dpcm)
     bruh = mult_DCT_log(invdpcm)
     display_images([bruh[0], bruh[1], bruh[2]], ['Inverse DPCM Y', 'Inverse DPCM Cb', 'Inverse DPCM Cr'])
