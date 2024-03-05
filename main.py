@@ -545,6 +545,63 @@ def dequantized_dct(Y_dct_quant, Cb_dct_quant, Cr_dct_quant,quant_matrix_Y,quant
 
     return canal_Y_dct_desquantizado, canal_Cb_dct_desquantizado, canal_Cr_dct_desquantizado
 
+def DPCM(channels):
+  Y_dct_log = channels[0].copy()
+  Cb_dct_log = channels[1].copy()
+  Cr_dct_log = channels[2].copy()
+
+  y, cb, cr = channels
+
+  original_Y = Y_dct_log.shape
+  original_Cb = Cb_dct_log.shape
+
+  dc0 = [0,0,0]
+  for i in range(0, original_Y[0], 8):
+    for j in range(0, original_Y[1], 8):
+      if i == 0 and j == 0:
+        dc0 = [y[0,0], cb[0,0], cr[0,0]]
+        continue
+      if i < original_Cb[0] and j < original_Cb[1]:
+        dc = cb[i,j], cr[i,j]
+        diff = dc[0] - dc0[1], dc[1] - dc0[2]
+        Cb_dct_log[i,j], Cr_dct_log[i,j] = diff
+        dc0[1] = dc[0]
+        dc0[2] = dc[1]
+      dc = y[i,j]
+      diff = dc - dc0[0]
+      Y_dct_log[i,j] = diff
+      dc0[0] = dc
+
+  return Y_dct_log, Cb_dct_log, Cr_dct_log
+
+def invDPCM(channels):
+  Y_dct_log = channels[0].copy()
+  Cb_dct_log = channels[1].copy()
+  Cr_dct_log = channels[2].copy()
+
+  y, cb, cr = channels
+
+  original_Y = Y_dct_log.shape
+  original_Cb = Cb_dct_log.shape
+
+  dc0 = [0,0,0]
+  for i in range(0, original_Y[0], 8):
+    for j in range(0, original_Y[1], 8):
+      if i == 0 and j == 0:
+        dc0 = [y[0,0], cb[0,0], cr[0,0]]
+        continue
+      if i < original_Cb[0] and j < original_Cb[1]:
+        dc = cb[i,j], cr[i,j]
+        diff = dc[0] + dc0[1], dc[1] + dc0[2]
+        Cb_dct_log[i,j], Cr_dct_log[i,j] = diff
+        dc0[1] = diff[0]
+        dc0[2] = diff[1]
+      dc = y[i,j]
+      diff = dc + dc0[0]
+      Y_dct_log[i,j] = diff
+      dc0[0] = diff
+  return y, cb, cr
+
 def main():
     
     # 3.1 Leia uma imagem .bmp, e.g., a imagem peppers.bmp.
@@ -948,7 +1005,9 @@ def main():
     Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant = encoder(None,False,False,False,False,Y_dct8, Cb_dct8, Cr_dct8,None,None,False,False,8,True,50,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
      
     Y_dct8, Cb_dct8, Cr_dct8 = decoder(None,None,None,None,None,None,False,False,False,False,Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant,None,False,False,8,True,matriz_quantizacao_Y,matriz_quantizacao_CbCr,50)
+
     
+
     return
 
 if __name__ == "__main__":
