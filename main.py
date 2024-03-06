@@ -691,8 +691,12 @@ def main():
     bruh = mult_DCT_log(invdpcm)
     display_images([bruh[0], bruh[1], bruh[2]], ['Inverse DPCM Y', 'Inverse DPCM Cb', 'Inverse DPCM Cr'])
 
-    conta = [invdpcm[0] - dpcm[0], invdpcm[1] - dpcm[1], invdpcm[2] - dpcm[2]]
-    print(conta)
+    
+    print("\nValores originais Y_d Cb_d Cr_d, após inverter o dpcm :")
+    print("Dimensões de Y_d",invdpcm[0].shape)
+    print("Dimensões de Cb_d",invdpcm[1].shape)
+    print("Dimensões de Cr_d",invdpcm[2].shape)
+    
       
     return
 
