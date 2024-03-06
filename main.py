@@ -33,7 +33,7 @@ def encoder(img = None, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y
      return DPCM(channel)
      
  
-def decoder(R=None,G=None,B=None,img_ycbcr = None,padded_img = None, og = None, unpad = False,join = False,YCBCR_to_RGB = False, up = False, Y_d = None, Cb_d = None, Cr_d = None, interpolation = None,Invert_DCT = False,invert_dct_Blocks=False,step=None,dequant = False,quant_matrix_Y = None,quant_matrix_CbCr = None, fq = None,DPCM = False, dpcm = None):
+def decoder(R=None,G=None,B=None,img_ycbcr = None,padded_img = None, og = None, unpad = False,join = False,YCBCR_to_RGB = False, up = False, Y_d = None, Cb_d = None, Cr_d = None, interpolation = None,Invert_DCT = False,invert_dct_Blocks=False,step=None,dequant = False,quant_matrix_Y = None,quant_matrix_CbCr = None, fq = None,DPCM = False, dpcm = None, reconstr = False):
 
   if join:
      imgRec = joinRGB(R, G, B)
@@ -59,6 +59,14 @@ def decoder(R=None,G=None,B=None,img_ycbcr = None,padded_img = None, og = None, 
 
   elif DPCM:
      return invDPCM(dpcm)
+  
+  elif reconstr:
+     Y_dct_deq, Cb_dct_deq, Cr_dct_deq = dequantized_dct(Y_d,Cb_d,Cr_d,quant_matrix_Y,quant_matrix_CbCr,step,fq)
+     Y_idct_invblock, Cb_idct_invblock, Cr_idct_invblock = invertDCTBlocks(Y_dct_deq, Cb_dct_deq, Cr_dct_deq,step)
+     Y_up,Cb_up,Cr_up = upsampling(Y_idct_invblock, Cb_idct_invblock, Cr_idct_invblock,interpolation)
+     R,G,B = ycbcr_to_rgb_2(Y_up,Cb_up,Cr_up)
+     img_p = joinRGB(R,G,B)
+     return unpadding(img_p,og)
   
 
 #3.2 Crie uma função para implementar um colormap definido pelo utilizador.
@@ -174,6 +182,18 @@ def YCbCr_to_RGB(img):
   output_matrix[output_matrix < 0] = 0
   return output_matrix
 
+def ycbcr_to_rgb_2(Y, Cb, Cr):
+    # Ajuste de Cb e Cr
+    Cb -= 128
+    Cr -= 128
+
+    # Matriz de conversão direta de YCbCr para RGB, ajustada para a formulação direta
+    R = Y + 1.402 * Cr
+    G = Y - 0.344136 * Cb - 0.714136 * Cr
+    B = Y + 1.772 * Cb
+
+    return R,G,B
+
 #6. Sub-amostragem.
 '''
   6.1. Crie uma função para sub-amostrar (downsampling) os canais Y, Cb, e Cr, segundo as
@@ -258,7 +278,8 @@ X_dct = dct(dct(X, norm=”ortho”).T, norm=”ortho”).T
 7.1.4. Decoder: Aplique a função inversa (7.1.2) e certifique-se de que consegue obter
 os valores originais de Y_d, Cb_d e Cr_d. 
 '''
-def invertDCT(Y_dct, Cb_dct, Cr_dct):  
+def invertDCT(Y_dct, Cb_dct, Cr_dct):
+    
     # Applying IDCT
     Y_inv_dct = idct(idct(Y_dct, norm='ortho').T, norm='ortho').T
     Cb_inv_dct = idct(idct(Cb_dct, norm='ortho').T, norm='ortho').T
@@ -277,7 +298,6 @@ def invertDCT(Y_dct, Cb_dct, Cr_dct):
     plt.title('Inverse DCT of Cr')
     plt.tight_layout()
     plt.show()
-
 
     return Y_inv_dct,Cb_inv_dct,Cr_inv_dct
 
@@ -429,7 +449,7 @@ def adj_quant_matrix(fator_qualidade,Lum_quant_matrix_std,Cro_quant_matrix_std):
         elif Qs_Cro[i,j] < 1:
            Qs_Cro[i,j] = 1
 
-  return Qs_Cro, Qs_Lum
+  return Qs_Cro.astype(np.uint8), Qs_Lum.astype(np.uint8)
      
 
 def quantize_block(dct_block, quant_matrix):
@@ -636,6 +656,33 @@ def display_images(images, titles, colormap='gray'):
     plt.tight_layout()
     plt.show()
 
+'''
+10.3. Crie uma função para cálculo da imagem das diferenças (entre o canal Y da original e
+da descompactada).
+'''
+
+def channel_diference(channel_Y_og,img_reconstr):
+    
+    channel_Y_reconstr, channel_Cb_reconstr, channel_Cr_reconstr = RGB_to_YCbCr(img_reconstr)
+    
+    #Problema de shape aqui
+    #channel_Y_dif = channel_Y_og - channel_Y_reconstr
+
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 1, 1)
+    plt.imshow(img_reconstr, None)
+    plt.title('Img Reconstr')
+    '''
+    plt.subplot(1, 2, 2)
+    plt.imshow(channel_Y_dif, cmap='gray')
+    plt.title('Imagem diferenças')
+    '''
+    plt.tight_layout()
+    plt.show()
+
+    #return channel_Y_dif
+
+
 def main():
     
     # 3.1 Leia uma imagem .bmp, e.g., a imagem peppers.bmp.
@@ -693,6 +740,9 @@ def main():
     #5.3
     #5.3.1 Converta os canais RGB para canais YCbCr (Com paddding)
     y,cb,cr = encoder(padded_img,pad = False,split = False, RGB_to_YCBCR = True)
+
+    #copia do canal Y original para o ex 10
+    Y_og_ex10 = y.copy()
     
     #5.3.2 Visualize cada um dos canais (com o colormap adequado)
     # Visualizar o canal Y usando mapa de cores em escala de cinza
@@ -987,6 +1037,9 @@ def main():
     """
 
     Y_dct8, Cb_dct8, Cr_dct8=encoder(None,False,False,False,False,Y_d,Cb_d,Cr_d,None,None,False,True,8)
+
+    Y_dct8_og, Cb_dct8_og, Cr_dct8_og = Y_dct8.copy(),Cb_dct8.copy(), Cr_dct8.copy()
+
     Y_d, Cb_d, Cr_d=decoder(None,None,None,None,None,None,False,False,False,False, Y_dct8, Cb_dct8, Cr_dct8,None,False,True,8)
 
     print("\nValores originais Y_d Cb_d Cr_d, pós DCT com blocos 8x8:")
@@ -1036,9 +1089,10 @@ def main():
     ]
 
     Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant = encoder(None,False,False,False,False,Y_dct8, Cb_dct8, Cr_dct8,None,None,False,False,8,True,50,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
-     
-    Y_dct8, Cb_dct8, Cr_dct8 = decoder(None,None,None,None,None,None,False,False,False,False,Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant,None,False,False,8,True,matriz_quantizacao_Y,matriz_quantizacao_CbCr,50)
+    
+    Y_DPCM,CB_DPCM,CR_DPCM = Y_dct8_quant.copy(), Cb_dct8_quant.copy(), Cr_dct8_quant.copy()
 
+    Y_dct8, Cb_dct8, Cr_dct8 = decoder(None,None,None,None,None,None,False,False,False,False,Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant,None,False,False,8,True,matriz_quantizacao_Y,matriz_quantizacao_CbCr,50)
     
     #9. Codificação DPCM dos coeficientes DC.
 
@@ -1047,11 +1101,8 @@ def main():
     Cb_dpcm e Cr_dpcm). 
     '''
 
-    Y_DPCM,CB_DPCM,CR_DPCM= Y_dct8_quant.copy(), Cb_dct8_quant.copy(), Cr_dct8_quant.copy()
-    channel=[Y_DPCM,CB_DPCM,CR_DPCM]
-    
-    #dequantized_dct(Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant,matriz_quantizacao_Y,matriz_quantizacao_CbCr,8, 50)
-   
+    channel = [Y_DPCM,CB_DPCM,CR_DPCM]
+       
     dpcm = encoder(None, False, False, False, False, Y_DPCM, CB_DPCM, CR_DPCM, None, None, False, False, None, None, None, None, None, True, channel)
     bruh = mult_DCT_log(dpcm)
     display_images([bruh[0], bruh[1], bruh[2]], ['DPCM Y', 'DPCM Cb', 'DPCM Cr'])
@@ -1062,13 +1113,47 @@ def main():
     '''
 
     invdpcm  = decoder(None,None,None,None,None,None,False,False,False,False,None, None, None,None,False,False,None,False,None,None,None,True,dpcm)
-    invdpcm = invDPCM(dpcm)
     bruh = mult_DCT_log(invdpcm)
     display_images([bruh[0], bruh[1], bruh[2]], ['Inverse DPCM Y', 'Inverse DPCM Cb', 'Inverse DPCM Cr'])
 
-    conta = [invdpcm[0] - dpcm[0], invdpcm[1] - dpcm[1], invdpcm[2] - dpcm[2]]
     print("\n#9\n")
-    print(conta)
+    print("Valores originais Y_d Cb_d Cr_d, após inverter o dpcm :")
+    print("Dimensões de Y_d",invdpcm[0].shape)
+    print("Dimensões de Cb_d",invdpcm[1].shape)
+    print("Dimensões de Cr_d",invdpcm[2].shape)
+
+    #10. Codificação e descodificação end-to-end.
+    '''
+    10.1. Encoder: Codifique as imagens fornecidas com os seguintes parâmetros de qualidade:
+    10, 25, 50, 75 e 100.
+    '''
+
+    #Y_dct8_quant_10, Cb_dct8_quant_10, Cr_dct8_quant_10 = encoder(None,False,False,False,False,Y_dct8_og, Cb_dct8_og, Cr_dct8_og,None,None,False,False,8,True,10,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
+    
+    #Y_dct8_quant_25, Cb_dct8_quant_25, Cr_dct8_quant_25 = encoder(None,False,False,False,False,Y_dct8_og, Cb_dct8_og, Cr_dct8_og,None,None,False,False,8,True,25,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
+
+    #Y_dct8_quant_50, Cb_dct8_quant_50, Cr_dct8_quant_50 = encoder(None,False,False,False,False,Y_dct8_og, Cb_dct8_og, Cr_dct8_og,None,None,False,False,8,True,50,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
+
+    Y_dct8_quant_75, Cb_dct8_quant_75, Cr_dct8_quant_75 = encoder(None,False,False,False,False,Y_dct8_og, Cb_dct8_og, Cr_dct8_og,None,None,False,False,8,True,75,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
+
+    #Y_dct8_quant_100, Cb_dct8_quant_100, Cr_dct8_quant_100 = encoder(None,False,False,False,False,Y_dct8_og, Cb_dct8_og, Cr_dct8_og,None,None,False,False,8,True,100,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
+
+    '''
+    10.2. Decoder: Reconstrua as imagens com base no resultado de 10.1.
+    '''
+
+    og = (h,w)
+
+    img_reconstr = decoder(None,None,None,None,None,og,False,False,False,False,Y_dct8_quant_75, Cb_dct8_quant_75, Cr_dct8_quant_75, cv2.INTER_LINEAR,False,False,8,False,matriz_quantizacao_Y,matriz_quantizacao_CbCr,75,False,None,True)
+    
+
+    '''
+    10.3. Crie uma função para cálculo da imagem das diferenças (entre o canal Y da original e da descompactada).
+    '''
+
+    channel_diference(Y_og_ex10,img_reconstr)
+
+
 
     return
 
