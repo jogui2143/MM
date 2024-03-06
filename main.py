@@ -4,7 +4,7 @@ import numpy as np
 from scipy.fftpack import dct, idct
 import cv2
 
-def encoder(img = None, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y=None, Cb=None, Cr=None, subsampling_type=None, interpolation=None,dct = False,dctBlocks=False,step=None,quant = False,fq = None,quant_matrix_Y = None,quant_matrix_CbCr = None):
+def encoder(img = None, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y=None, Cb=None, Cr=None, subsampling_type=None, interpolation=None,dct = False,dctBlocks=False,step=None,quant = False,fq = None,quant_matrix_Y = None,quant_matrix_CbCr = None,dpcmfds=False,channel=None):
 
   if split:
     R, G, B = splitRGB(img)
@@ -28,9 +28,12 @@ def encoder(img = None, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y
   elif quant:
     Qs_Cro, Qs_Lum = adj_quant_matrix(fq,quant_matrix_Y,quant_matrix_CbCr)
     return quantized_dct(Y, Cb, Cr,Qs_Cro,Qs_Lum,step,fq)
+  
+  elif dpcmfds:
+     return DPCM(channel)
      
  
-def decoder(R=None,G=None,B=None,img_ycbcr = None,padded_img = None, og = None, unpad = False,join = False,YCBCR_to_RGB = False, up = False, Y_d = None, Cb_d = None, Cr_d = None, interpolation = None,Invert_DCT = False,invert_dct_Blocks=False,step=None,dequant = False,quant_matrix_Y = None,quant_matrix_CbCr = None, fq = None):
+def decoder(R=None,G=None,B=None,img_ycbcr = None,padded_img = None, og = None, unpad = False,join = False,YCBCR_to_RGB = False, up = False, Y_d = None, Cb_d = None, Cr_d = None, interpolation = None,Invert_DCT = False,invert_dct_Blocks=False,step=None,dequant = False,quant_matrix_Y = None,quant_matrix_CbCr = None, fq = None,DPCM = False, dpcm = None):
 
   if join:
      imgRec = joinRGB(R, G, B)
@@ -53,6 +56,9 @@ def decoder(R=None,G=None,B=None,img_ycbcr = None,padded_img = None, og = None, 
   
   elif dequant:        
      return dequantized_dct(Y_d,Cb_d,Cr_d,quant_matrix_Y,quant_matrix_CbCr,step,fq)
+
+  elif DPCM:
+     return invDPCM(dpcm)
   
 
 #3.2 Crie uma função para implementar um colormap definido pelo utilizador.
@@ -545,6 +551,14 @@ def dequantized_dct(Y_dct_quant, Cb_dct_quant, Cr_dct_quant,quant_matrix_Y,quant
 
     return canal_Y_dct_desquantizado, canal_Cb_dct_desquantizado, canal_Cr_dct_desquantizado
 
+
+
+#9. Codificação DPCM dos coeficientes DC.
+'''
+9.1. Crie uma função para realizar a codificação dos coeficientes DC de cada bloco. Em cada
+bloco, substitua o valor DC pelo valor da diferença. 
+'''
+
 def DPCM(channels):
   Y_dct_log = channels[0].copy()
   Cb_dct_log = channels[1].copy()
@@ -574,6 +588,8 @@ def DPCM(channels):
 
   return Y_dct_log, Cb_dct_log, Cr_dct_log
 
+#9.2. Crie também a função inversa.
+
 def invDPCM(channels):
   Y_dct_log = channels[0].copy()
   Cb_dct_log = channels[1].copy()
@@ -601,6 +617,24 @@ def invDPCM(channels):
       Y_dct_log[i,j] = diff
       dc0[0] = diff
   return y, cb, cr
+
+def single_DCT_log(channel):
+   return np.log(np.abs(channel) + .0001)
+
+
+def mult_DCT_log(channels):
+  return single_DCT_log(channels[0]),single_DCT_log(channels[1]),single_DCT_log(channels[2])
+
+def display_images(images, titles, colormap='gray'):
+    
+    plt.figure(figsize=(12, 4))
+    num_images = len(images)
+    for i in range(num_images):
+        plt.subplot(1, num_images, i + 1)
+        plt.imshow(images[i], cmap=colormap)
+        plt.title(titles[i])
+    plt.tight_layout()
+    plt.show()
 
 def main():
     
@@ -804,7 +838,6 @@ def main():
     plt.tight_layout()
     plt.show()
 
-    print("\n---[downsampling 4:2:2 (LINEAR)]---\n")
     print("Dimensões de Y_d:", Y_d.shape)
     print("Dimensões de Cb_d:", Cb_d.shape)
     print("Dimensões de Cr_d:", Cr_d.shape)
@@ -887,7 +920,7 @@ def main():
     plt.tight_layout()
     plt.show()
 
-    print("\n---[downsampling 4:2:2 (LINEAR)]---\n")
+    print("---[downsampling 4:2:2 (LINEAR)]---\n")
     print("Dimensões de Y_d:", Y_d.shape)
     print("Dimensões de Cb_d:", Cb_d.shape)
     print("Dimensões de Cr_d:", Cr_d.shape)
@@ -1007,6 +1040,35 @@ def main():
     Y_dct8, Cb_dct8, Cr_dct8 = decoder(None,None,None,None,None,None,False,False,False,False,Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant,None,False,False,8,True,matriz_quantizacao_Y,matriz_quantizacao_CbCr,50)
 
     
+    #9. Codificação DPCM dos coeficientes DC.
+
+    '''
+    9.3. Encoder: Aplique a função 9.1 aos valores da DCT quantizada, obtendo Y_dpcm,
+    Cb_dpcm e Cr_dpcm). 
+    '''
+
+    Y_DPCM,CB_DPCM,CR_DPCM= Y_dct8_quant.copy(), Cb_dct8_quant.copy(), Cr_dct8_quant.copy()
+    channel=[Y_DPCM,CB_DPCM,CR_DPCM]
+    
+    #dequantized_dct(Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant,matriz_quantizacao_Y,matriz_quantizacao_CbCr,8, 50)
+   
+    dpcm = encoder(None, False, False, False, False, Y_DPCM, CB_DPCM, CR_DPCM, None, None, False, False, None, None, None, None, None, True, channel)
+    bruh = mult_DCT_log(dpcm)
+    display_images([bruh[0], bruh[1], bruh[2]], ['DPCM Y', 'DPCM Cb', 'DPCM Cr'])
+
+    '''
+    9.4. Decoder: Aplique a função inversa (9.2) e certifique-se de que consegue obter os
+    valores originais de Y_q, Cb_q e Cr_q.
+    '''
+
+    invdpcm  = decoder(None,None,None,None,None,None,False,False,False,False,None, None, None,None,False,False,None,False,None,None,None,True,dpcm)
+    invdpcm = invDPCM(dpcm)
+    bruh = mult_DCT_log(invdpcm)
+    display_images([bruh[0], bruh[1], bruh[2]], ['Inverse DPCM Y', 'Inverse DPCM Cb', 'Inverse DPCM Cr'])
+
+    conta = [invdpcm[0] - dpcm[0], invdpcm[1] - dpcm[1], invdpcm[2] - dpcm[2]]
+    print("\n#9\n")
+    print(conta)
 
     return
 
