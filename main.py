@@ -182,15 +182,27 @@ def YCbCr_to_RGB(img):
   output_matrix[output_matrix < 0] = 0
   return output_matrix
 
-def ycbcr_to_rgb_2(Y, Cb, Cr):
-    # Ajuste de Cb e Cr
-    Cb -= 128
-    Cr -= 128
+def ycbcr_to_rgb_2(Y, Cb, Cr,show = False):        
 
-    # Matriz de conversão direta de YCbCr para RGB, ajustada para a formulação direta
-    R = Y + 1.402 * Cr
-    G = Y - 0.344136 * Cb - 0.714136 * Cr
-    B = Y + 1.772 * Cb
+    Tc = np.array([[0.299, 0.587, 0.114],
+              [-0.168736, -0.331264, 0.5],
+              [0.5, -0.418688, -0.081312]])
+    
+    Tci = np.linalg.inv(Tc)
+   
+    R = Tci[0,0]*Y + Tci[0,1]*(Cb - 128) + Tci[0,2]*(Cr - 128)
+    R[R>255] = 255
+    R[R<0] = 0
+    R = np.round(R).astype(np.uint8)
+    G  = Tci[1,0]*Y + Tci[1,1]*(Cb - 128) + Tci[1,2]*(Cr - 128)
+    #print(G[:8, :8])
+    G[G>255] = 255
+    G[G<0] = 0
+    G = np.round(G).astype(np.uint8)
+    B = Tci[2,0]*Y + Tci[2,1]*(Cb - 128) + Tci[2,2]*(Cr - 128)
+    B[B>255] = 255
+    B[B<0] = 0
+    B = np.round(B).astype(np.uint8)
 
     return R,G,B
 
@@ -397,7 +409,7 @@ def invertDCTBlocks(Y, Cb, Cr,step):
   8.3. Encoder: Quantize os coeficientes da DCT, usando os seguintes factores de qualidade:
   10, 25, 50, 75 e 100. Visualize as imagens obtidas (Y_q, CB_q e Cr_q).
   '''
-
+'''
 def adj_quant_matrix(fator_qualidade,Lum_quant_matrix_std,Cro_quant_matrix_std):
    
   if fator_qualidade >= 50:
@@ -450,7 +462,30 @@ def adj_quant_matrix(fator_qualidade,Lum_quant_matrix_std,Cro_quant_matrix_std):
            Qs_Cro[i,j] = 1
 
   return Qs_Cro.astype(np.uint8), Qs_Lum.astype(np.uint8)
-     
+'''
+
+def adj_quant_matrix(fator_qualidade,Lum_quant_matrix_std,Cro_quant_matrix_std):
+  if fator_qualidade < 50:
+     fator = 50 / fator_qualidade
+  
+  else:
+     fator = (100-fator_qualidade) / 50
+
+  if fator_qualidade == 0:
+      Qs_Lum, Qs_Cro = np.ones_like(Lum_quant_matrix_std),np.ones_like(Cro_quant_matrix_std)
+      return Qs_Cro,Qs_Lum
+
+  Qs_Lum = np.round((Lum_quant_matrix_std * fator))
+  Qs_Cro = np.round((Cro_quant_matrix_std * fator))
+
+  Qs_Cro[Qs_Cro < 1] = 1
+  Qs_Cro[Qs_Cro > 255] = 255
+
+  Qs_Lum[Qs_Lum < 1] = 1
+  Qs_Lum[Qs_Lum > 255] = 255
+
+  return Qs_Cro.astype(np.uint8),Qs_Lum.astype(np.uint8)
+
 
 def quantize_block(dct_block, quant_matrix):
     
@@ -1066,27 +1101,27 @@ def main():
       10, 25, 50, 75 e 100. Visualize as imagens obtidas (Y_q, CB_q e Cr_q).
     '''
 
-    matriz_quantizacao_Y = [
-    [16, 11, 10, 16, 24, 40, 51, 61],
-    [12, 12, 14, 19, 26, 58, 60, 55],
-    [14, 13, 16, 24, 40, 57, 69, 56],
-    [14, 17, 22, 29, 51, 87, 80, 62],
-    [18, 22, 37, 56, 68, 109, 103, 77],
-    [24, 35, 55, 64, 81, 104, 113, 92],
-    [49, 64, 78, 87, 103, 121, 120, 101],
-    [72, 92, 95, 98, 112, 100, 103, 99]
-    ]
+    matriz_quantizacao_Y = np.array([
+      [16, 11, 10, 16, 24, 40, 51, 61],
+      [12, 12, 14, 19, 26, 58, 60, 55],
+      [14, 13, 16, 24, 40, 57, 69, 56],
+      [14, 17, 22, 29, 51, 87, 80, 62],
+      [18, 22, 37, 56, 68, 109, 103, 77],
+      [24, 35, 55, 64, 81, 104, 113, 92],
+      [49, 64, 78, 87, 103, 121, 120, 101],
+      [72, 92, 95, 98, 112, 100, 103, 99]
+      ],dtype=np.uint16)
 
-    matriz_quantizacao_CbCr = [
-    [17, 18, 24, 47, 99, 99, 99, 99],
-    [18, 21, 26, 66, 99, 99, 99, 99],
-    [24, 26, 56, 99, 99, 99, 99, 99],
-    [47, 66, 99, 99, 99, 99, 99, 99],
-    [99, 99, 99, 99, 99, 99, 99, 99],
-    [99, 99, 99, 99, 99, 99, 99, 99],
-    [99, 99, 99, 99, 99, 99, 99, 99],
-    [99, 99, 99, 99, 99, 99, 99, 99]
-    ]
+    matriz_quantizacao_CbCr = np.array([
+      [17, 18, 24, 47, 99, 99, 99, 99],
+      [18, 21, 26, 66, 99, 99, 99, 99],
+      [24, 26, 56, 99, 99, 99, 99, 99],
+      [47, 66, 99, 99, 99, 99, 99, 99],
+      [99, 99, 99, 99, 99, 99, 99, 99],
+      [99, 99, 99, 99, 99, 99, 99, 99],
+      [99, 99, 99, 99, 99, 99, 99, 99],
+      [99, 99, 99, 99, 99, 99, 99, 99]
+      ],dtype=np.uint16)
 
     Y_dct8_quant, Cb_dct8_quant, Cr_dct8_quant = encoder(None,False,False,False,False,Y_dct8, Cb_dct8, Cr_dct8,None,None,False,False,8,True,50,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
     
@@ -1152,7 +1187,6 @@ def main():
     '''
 
     channel_diference(Y_og_ex10,img_reconstr)
-
 
 
     return
