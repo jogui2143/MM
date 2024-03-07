@@ -3,6 +3,9 @@ import matplotlib.colors as clr
 import numpy as np
 from scipy.fftpack import dct, idct
 import cv2
+from sklearn.metrics import mean_squared_error
+from math import log10, sqrt
+
 
 def encoder(img = None, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y=None, Cb=None, Cr=None, subsampling_type=None, interpolation=None,dct = False,dctBlocks=False,step=None,quant = False,fq = None,quant_matrix_Y = None,quant_matrix_CbCr = None,dpcmfds=False,channel=None):
 
@@ -159,6 +162,12 @@ def RGB_to_YCbCr(img):
   cr = cm[2,0]*r + cm[2,1]*g + cm[2,2]*b + 128
 
   return y, cb, cr
+
+def rgb_to_ycbcr_2(R,G,B):
+    Y = 0.299 * R + 0.587 * G + 0.114 * B #Luminancia  
+    Cb = -0.168736 * R - 0.331264 * G + 0.5 * B + 128 # Crominancia Azul
+    Cr = 0.5 * R - 0.418688 * G - 0.081312 * B + 128 # Crominancia Vermelho
+    return Y,Cb,Cr
 
 #5.2  Crie também a função inversa (conversão de YCbCr para RGB). Nota: na conversão 
 #inversa, garanta que os valores R, G e B obtidos sejam números inteiros no intervalo {0, 1, …, 255}
@@ -696,26 +705,79 @@ def display_images(images, titles, colormap='gray'):
 da descompactada).
 '''
 
-def channel_diference(channel_Y_og,img_reconstr):
+def channel_diference(Y,img_reconstr):
     
-    channel_Y_reconstr, channel_Cb_reconstr, channel_Cr_reconstr = RGB_to_YCbCr(img_reconstr)
+    padded_img_r, (h, w) = padding(img_reconstr)
+    
+    Y_r, Cb_r, Cr_r = RGB_to_YCbCr(padded_img_r)
     
     #Problema de shape aqui
-    #channel_Y_dif = channel_Y_og - channel_Y_reconstr
+    diff = np.abs(Y-Y_r)
 
     plt.figure(figsize=(12, 4))
-    plt.subplot(1, 1, 1)
+    plt.subplot(1, 2, 1)
     plt.imshow(img_reconstr, None)
     plt.title('Img Reconstr')
-    '''
+    
     plt.subplot(1, 2, 2)
-    plt.imshow(channel_Y_dif, cmap='gray')
+    plt.imshow(diff, cmap='gray')
     plt.title('Imagem diferenças')
-    '''
+    
     plt.tight_layout()
     plt.show()
 
-    #return channel_Y_dif
+'''
+10.4. Crie uma função para calculo das métricas de distorção MSE, RMSE, SNR, PSNR,
+max_diff e avg_diff (por comparação da imagem original com a descompactada).
+'''
+
+def calculate_mse(img_original, img_reconstructed):
+    mse = mean_squared_error(img_original.flatten(), img_reconstructed.flatten())
+    return mse
+
+def calculate_rmse(mse):
+    rmse = sqrt(mse)
+    return rmse
+
+def calculate_psnr(mse):
+    max_pixel = 255.0
+    psnr = 20 * log10(max_pixel / sqrt(mse))
+    return psnr
+
+def calculate_snr(img_original, mse):
+    signal_power = np.mean(np.square(img_original))
+    snr = 10 * log10(signal_power / mse)
+    return snr
+
+def calculate_max_diff(img_original, img_reconstructed):
+
+    max_diff = np.max(np.abs(img_original - img_reconstructed))
+    return max_diff
+
+def calculate_avg_diff(img_original, img_reconstructed):
+
+    avg_diff = np.mean(np.abs(img_original - img_reconstructed))
+    return avg_diff
+
+def distorcao(img_og, img_reconstr):
+
+    #MSE
+    mse = calculate_mse(img_og, img_reconstr)
+
+    #RMSE
+    rmse = calculate_rmse(mse)
+
+    #PSNR
+    psnr = calculate_psnr(mse)
+
+    #SNR
+    snr = calculate_snr(img_og, mse)
+
+    max_diff = calculate_max_diff(img_og, img_reconstr)
+
+    avg_diff = calculate_avg_diff(img_og, img_reconstr)
+
+    print("\nMSE = "+ str(mse) + "\nRMSE = " + str(rmse) + "\nSNR = " + str(snr) + "\nPSNR = " + str(psnr) + "\n\nMax diff: " + str(max_diff) + "\nAvg diff: " + str(avg_diff))
 
 
 def main():
@@ -1163,15 +1225,9 @@ def main():
     10, 25, 50, 75 e 100.
     '''
 
-    #Y_dct8_quant_10, Cb_dct8_quant_10, Cr_dct8_quant_10 = encoder(None,False,False,False,False,Y_dct8_og, Cb_dct8_og, Cr_dct8_og,None,None,False,False,8,True,10,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
-    
-    #Y_dct8_quant_25, Cb_dct8_quant_25, Cr_dct8_quant_25 = encoder(None,False,False,False,False,Y_dct8_og, Cb_dct8_og, Cr_dct8_og,None,None,False,False,8,True,25,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
+    qualidade = 75
 
-    #Y_dct8_quant_50, Cb_dct8_quant_50, Cr_dct8_quant_50 = encoder(None,False,False,False,False,Y_dct8_og, Cb_dct8_og, Cr_dct8_og,None,None,False,False,8,True,50,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
-
-    Y_dct8_quant_75, Cb_dct8_quant_75, Cr_dct8_quant_75 = encoder(None,False,False,False,False,Y_dct8_og, Cb_dct8_og, Cr_dct8_og,None,None,False,False,8,True,75,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
-
-    #Y_dct8_quant_100, Cb_dct8_quant_100, Cr_dct8_quant_100 = encoder(None,False,False,False,False,Y_dct8_og, Cb_dct8_og, Cr_dct8_og,None,None,False,False,8,True,100,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
+    Y_dct8_quant_ex10, Cb_dct8_quant_ex10, Cr_dct8_quant_ex10 = encoder(None,False,False,False,False,Y_dct8_og, Cb_dct8_og, Cr_dct8_og,None,None,False,False,8,True,qualidade,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
 
     '''
     10.2. Decoder: Reconstrua as imagens com base no resultado de 10.1.
@@ -1179,8 +1235,7 @@ def main():
 
     og = (h,w)
 
-    img_reconstr = decoder(None,None,None,None,None,og,False,False,False,False,Y_dct8_quant_75, Cb_dct8_quant_75, Cr_dct8_quant_75, cv2.INTER_LINEAR,False,False,8,False,matriz_quantizacao_Y,matriz_quantizacao_CbCr,75,False,None,True)
-    
+    img_reconstr = decoder(None,None,None,None,None,og,False,False,False,False,Y_dct8_quant_ex10, Cb_dct8_quant_ex10, Cr_dct8_quant_ex10, cv2.INTER_LINEAR,False,False,8,False,matriz_quantizacao_Y,matriz_quantizacao_CbCr,qualidade,False,None,True)    
 
     '''
     10.3. Crie uma função para cálculo da imagem das diferenças (entre o canal Y da original e da descompactada).
@@ -1188,6 +1243,16 @@ def main():
 
     channel_diference(Y_og_ex10,img_reconstr)
 
+    '''
+    10.4. Crie uma função para calculo das métricas de distorção MSE, RMSE, SNR, PSNR,
+    max_diff e avg_diff (por comparação da imagem original com a descompactada).
+    '''
+
+    print("\n#10\n")
+
+    img_og = plt.imread(fname)
+
+    distorcao(img_og,img_reconstr)
 
     return
 
