@@ -635,7 +635,7 @@ def main():
     cm_gray=newCmap([(0,0,0),(1,1,1)], "cm_gray", 256)
 
     #3.3 Crie uma função que permita visualizar a imagem com um dado colormap.
-    showImg(img,fname,"Imagem original com colormap gray: ")
+    showImg(img,fname,"Imagem original: ")
 
     #3.4. Encoder: Crie uma função para separar a imagem nos seus componentes RGB
     R,G,B = splitRGB(img)
