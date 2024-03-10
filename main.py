@@ -3,9 +3,6 @@ import matplotlib.colors as clr
 import numpy as np
 from scipy.fftpack import dct, idct
 import cv2
-from sklearn.metrics import mean_squared_error
-from math import log10, sqrt
-
 
 def encoder(img = None, pad=False, split=False, RGB_to_YCBCR=False, sub=False, Y=None, Cb=None, Cr=None, subsampling_type=None, interpolation=None,dct = False,dctBlocks=False,step=None,quant = False,fq = None,quant_matrix_Y = None,quant_matrix_CbCr = None,dpcmfds=False,channel=None):
 
@@ -647,7 +644,7 @@ def main():
     #imgRec = decoder(R, G, B, img_ycbcr = None,og = None,unpad = False, join= True,YCBCR_to_RGB = False)
 
     '''''
-    #4.1. Encoder: Crie uma função para fazer padding dos canais RGB. 
+    4.1. Encoder: Crie uma função para fazer padding dos canais RGB. 
     Obs: Caso a dimensão da imagem não seja múltipla de 32x32, faça padding da mesma, replicando a última linha
     e a última coluna em conformidade.
     '''''
@@ -666,7 +663,7 @@ def main():
     showImg(B,fname,"Img Blue Padded: ",cm_blue)
 
     '''
-    #4.2. Decoder: Crie também a função inversa para remover o padding. 
+    4.2. Decoder: Crie também a função inversa para remover o padding. 
     Obs: Certifique-se de que recupera os canais RGB com a dimensão original, visualizando a imagem original.
     '''
     unpadded_img = decoder(R,G,B,img = None,padded_img = padded_img, og = (h,w),unpad = True,join = False,YCBCR_to_RGB = False)
@@ -782,7 +779,7 @@ def main():
     7.1.2. Crie também a função inversa (usando scipy.fftpack.idct).
     Nota: para uma matriz, X, com duas dimensões, deverá fazer:
     X_dct = dct(dct(X, norm=”ortho”).T, norm=”ortho”).T
-    #7.1.4. Decoder: Aplique a função inversa (7.1.2) e certifique-se de que consegue obter os valores originais de Y_d, Cb_d e Cr_d. 
+    7.1.4. Decoder: Aplique a função inversa (7.1.2) e certifique-se de que consegue obter os valores originais de Y_d, Cb_d e Cr_d. 
     '''
 
     Y_d, Cb_d, Cr_d= decoder(None,None,None,None,None,None,False,False,False,False, Y_d_dct,Cb_d_dct,Cr_d_dct,None,True)
@@ -856,7 +853,7 @@ def main():
     Y_d_dct8, Cb_d_dct8, Cr_d_dct8 = decoder(None,None,None,None,None,None,False,False,False,False,Y_d_dct8_quant, Cb_d_dct8_quant, Cr_d_dct8_quant,None,False,False,8,True,matriz_quantizacao_Y,matriz_quantizacao_CbCr,qualidade)
     
     '''
-    #9. Codificação DPCM dos coeficientes DC.
+    9. Codificação DPCM dos coeficientes DC.
     9.3. Encoder: Aplique a função 9.1 aos valores da DCT quantizada, obtendo Y_dpcm,
     Cb_dpcm e Cr_dpcm). 
     '''
@@ -884,7 +881,7 @@ def main():
     print("Dimensões de Cr_d",invdpcm[2].shape)
 
     '''
-    #10. Codificação e descodificação end-to-end.
+    10. Codificação e descodificação end-to-end.
     10.1. Encoder: Codifique as imagens fornecidas com os seguintes parâmetros de qualidade:
     10, 25, 50, 75 e 100.
     10.2. Decoder: Reconstrua as imagens com base no resultado de 10.1.
