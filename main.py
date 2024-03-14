@@ -420,7 +420,7 @@ def adj_quant_matrix(fator_qualidade,Lum_quant_matrix_std,Cro_quant_matrix_std):
         elif Qs_Cro[i,j] < 1:
            Qs_Cro[i,j] = 1
 
-  return Qs_Cro, Qs_Lum
+  return Qs_Cro.astype(np.uint8), Qs_Lum.astype(np.uint8)
      
 
 def quantize_block(dct_block, quant_matrix):
@@ -496,10 +496,20 @@ def dequantize_block(quantized_block, fq,Lum_quant_matrix_std,Cro_quant_matrix_s
 def dequantized_dct(Y_dct_quant, Cb_dct_quant, Cr_dct_quant,quant_matrix_Y,quant_matrix_CbCr,step, fq):
    
    
-  # Function to apply IDCT to a block
-    def apply_idct(block):
-        return idct(idct(block.T, norm='ortho').T, norm='ortho')
+  
+    def apply_idct(Y, Cb, Cr):
+          # Applying IDCT
+      y_recuperado = idct(idct(Y.T, norm='ortho').T, norm='ortho')
+    
 
+      Cb_recuperado = idct(idct(Cb.T, norm='ortho').T, norm='ortho')
+
+      Cr_recuperado = idct(idct(Cr.T, norm='ortho').T, norm='ortho')
+
+        
+
+      return y_recuperado,Cb_recuperado,Cr_recuperado
+    
     lines_Y, cols_Y = Y_dct_quant.shape
     lines_Cb, cols_Cb = Cb_dct_quant.shape
     lines_Cr, cols_Cr = Cr_dct_quant.shape
@@ -508,26 +518,27 @@ def dequantized_dct(Y_dct_quant, Cb_dct_quant, Cr_dct_quant,quant_matrix_Y,quant
     for i in range(0, lines_Y, step):
         for j in range(0, cols_Y, step):
             dct_block = Y_dct_quant[i:i+step, j:j+step]
-            Y_dct_quant[i:i+step, j:j+step] = apply_idct(dequantize_block(dct_block, fq, quant_matrix_Y, quant_matrix_CbCr, Crominancia=False, Luminancia=True))
+            Y_dct_quant[i:i+step, j:j+step] = dequantize_block(dct_block, fq, quant_matrix_Y, quant_matrix_CbCr, Crominancia=False, Luminancia=True)
 
     # Process Cb channel
     for i in range(0, lines_Cb, step):
         for j in range(0, cols_Cb, step):
             dct_block = Cb_dct_quant[i:i+step, j:j+step]
-            Cb_dct_quant[i:i+step, j:j+step] = apply_idct(dequantize_block(dct_block, fq, quant_matrix_Y, quant_matrix_CbCr, Crominancia=True, Luminancia=False))
+            Cb_dct_quant[i:i+step, j:j+step] = dequantize_block(dct_block, fq, quant_matrix_Y, quant_matrix_CbCr, Crominancia=True, Luminancia=False)
 
     # Process Cr channel
     for i in range(0, lines_Cr, step):
         for j in range(0, cols_Cr, step):
             dct_block = Cr_dct_quant[i:i+step, j:j+step]
-            Cr_dct_quant[i:i+step, j:j+step] = apply_idct(dequantize_block(dct_block, fq, quant_matrix_Y, quant_matrix_CbCr, Crominancia=True, Luminancia=False))
+            Cr_dct_quant[i:i+step, j:j+step] = dequantize_block(dct_block, fq, quant_matrix_Y, quant_matrix_CbCr, Crominancia=True, Luminancia=False)
 
 
+    y_out, cb_out, cr_out = apply_idct(Y_dct_quant, Cb_dct_quant, Cr_dct_quant)
   
   
-    Y_dct_log = np.log(np.abs(Y_dct_quant) + 0.0001)
-    Cb_dct_log = np.log(np.abs(Cb_dct_quant) + 0.0001)
-    Cr_dct_log = np.log(np.abs(Cr_dct_quant) + 0.0001)
+    Y_dct_log = np.log(np.abs(y_out) + 0.0001)
+    Cb_dct_log = np.log(np.abs(cb_out) + 0.0001)
+    Cr_dct_log = np.log(np.abs(cr_out) + 0.0001)
 
 
     # Displaying dequantized images
