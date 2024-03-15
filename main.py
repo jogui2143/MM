@@ -846,7 +846,7 @@ def main():
       [99, 99, 99, 99, 99, 99, 99, 99]
       ],dtype=np.uint16)
     
-    qualidade = 75
+    qualidade = 10
 
     Y_d_dct8_quant, Cb_d_dct8_quant, Cr_d_dct8_quant = encoder(None,False,False,False,False,Y_d_dct8, Cb_d_dct8, Cr_d_dct8,None,None,False,False,8,True,qualidade,matriz_quantizacao_Y,matriz_quantizacao_CbCr)
     
